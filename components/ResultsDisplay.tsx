@@ -387,9 +387,8 @@ export default function ResultsDisplay({ status, fileName, generateAnalysis }: R
       const iAmWidth = pdf.getTextWidth(iAmText)
       const hurredWidth = pdf.getTextWidth(hurredText)
 
-      // Logo should match the height of the text (18pt = ~6.35mm)
-      const textHeight = 18 * 0.3527 // Convert points to mm
-      const logoSize = textHeight // Logo same height as text
+      // Logo should match the height of the capital letter
+      const logoSize = 8.5 // Logo size in mm to match capital letter height
 
       // Calculate total width and center position
       const totalWidth = iAmWidth + logoSize + hurredWidth
@@ -410,7 +409,7 @@ export default function ResultsDisplay({ status, fileName, generateAnalysis }: R
             const base64data = reader.result as string
             // Position logo so its bottom aligns with text baseline
             // yPos is the text baseline, so logo top should be at yPos - logoSize
-            pdf.addImage(base64data, "PNG", startX + iAmWidth, yPos - logoSize + 1.5, logoSize, logoSize)
+            pdf.addImage(base64data, "PNG", startX + iAmWidth, yPos - logoSize + 2, logoSize, logoSize)
             resolve(true)
           }
           reader.readAsDataURL(blob)
