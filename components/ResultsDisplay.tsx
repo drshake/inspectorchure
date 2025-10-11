@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from "react"
 import { Progress } from "@/components/ui/progress"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
-import html2canvas from "html2canvas"
 
 type AnalysisStatus = "idle" | "analyzing" | "complete"
 
@@ -31,7 +30,6 @@ interface AnalysisResult {
   analyzedAt: string
 }
 
-// Update the props to include fileName and generateAnalysis
 interface ResultsDisplayProps {
   status: AnalysisStatus
   fileName: string
@@ -62,7 +60,6 @@ export default function ResultsDisplay({ status, fileName, generateAnalysis }: R
 
   useEffect(() => {
     if (status === "complete") {
-      // Generate unique analysis results based on the filename
       const analysisResults = generateAnalysis(fileName)
       setResults(analysisResults)
     }
@@ -82,53 +79,95 @@ export default function ResultsDisplay({ status, fileName, generateAnalysis }: R
   }
 
   const handleShare = async () => {
-    if (!reportRef.current || !results) return
+    if (!results) return
 
     setIsSharing(true)
 
     try {
-      // Capture the report as an image
-      const canvas = await html2canvas(reportRef.current, {
-        backgroundColor: "#ffffff",
-        scale: 2,
-        logging: false,
-        useCORS: true,
-      })
+      const shareText = `My Food Safety Hygiene Score: ${results.score}% 🎯\n\nI am Churred - Setting the new global food safety standard! 🍽️✨`
 
-      // Convert canvas to blob
-      canvas.toBlob(async (blob) => {
-        if (!blob) {
-          throw new Error("Failed to create image")
-        }
-
-        const file = new File([blob], "hygiene-report.png", { type: "image/png" })
-        const shareText = `My Food Safety Hygiene Score: ${results.score}% 🎯\n\nI am Churred - Setting the new global food safety standard! 🍽️✨`
-
-        // Check if Web Share API is available (mainly for mobile)
-        if (navigator.share && navigator.canShare({ files: [file] })) {
-          try {
-            await navigator.share({
-              title: "My Hygiene Analysis Report",
-              text: shareText,
-              files: [file],
-            })
-          } catch (err: any) {
-            if (err.name !== "AbortError") {
-              console.error("Share failed:", err)
-              // Fallback to download
-              downloadImage(canvas)
-            }
+      // Try native share API first (works on mobile)
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: "My Hygiene Analysis Report",
+            text: shareText,
+            url: window.location.href,
+          })
+        } catch (err: any) {
+          // User cancelled share or share failed
+          if (err.name !== "AbortError") {
+            console.error("Share failed:", err)
+            // Fallback to screenshot share
+            await shareScreenshot()
           }
-        } else {
-          // Fallback: Download the image
-          downloadImage(canvas)
         }
-      }, "image/png")
+      } else {
+        // Desktop fallback - try screenshot
+        await shareScreenshot()
+      }
     } catch (error) {
       console.error("Error sharing report:", error)
       alert("Failed to share report. Please try again.")
     } finally {
       setIsSharing(false)
+    }
+  }
+
+  const shareScreenshot = async () => {
+    if (!reportRef.current || !results) return
+
+    try {
+      // Dynamically import html2canvas only when needed
+      const html2canvas = (await import("html2canvas")).default
+
+      const canvas = await html2canvas(reportRef.current, {
+        backgroundColor: "#ffffff",
+        scale: 2,
+        logging: false,
+        useCORS: true,
+        allowTaint: true,
+      })
+
+      return new Promise<void>((resolve, reject) => {
+        canvas.toBlob(
+          async (blob) => {
+            if (!blob) {
+              reject(new Error("Failed to create image"))
+              return
+            }
+
+            const file = new File([blob], "hygiene-report.png", { type: "image/png" })
+
+            // Try to share with file
+            if (navigator.share && navigator.canShare({ files: [file] })) {
+              try {
+                await navigator.share({
+                  files: [file],
+                  title: "My Hygiene Analysis Report",
+                  text: `My Food Safety Hygiene Score: ${results.score}%`,
+                })
+                resolve()
+              } catch (err) {
+                if ((err as any).name !== "AbortError") {
+                  // Download as fallback
+                  downloadImage(canvas)
+                  resolve()
+                }
+              }
+            } else {
+              // Download as fallback
+              downloadImage(canvas)
+              resolve()
+            }
+          },
+          "image/png",
+          1.0,
+        )
+      })
+    } catch (error) {
+      console.error("Screenshot error:", error)
+      throw error
     }
   }
 
@@ -297,7 +336,6 @@ export default function ResultsDisplay({ status, fileName, generateAnalysis }: R
           </div>
         </section>
 
-        {/* Churred Watermark */}
         <div className="flex items-center justify-end pt-4">
           <div className="inline-flex items-center">
             <span className="font-bold text-lg text-blue-900 mr-1">I am</span>
