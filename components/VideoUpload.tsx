@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useRef, useCallback } from "react"
-import { Video, Square, Upload, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 export default function VideoUpload({
@@ -169,7 +168,9 @@ export default function VideoUpload({
               onClick={closeCamera}
               className="w-10 h-10 rounded-full bg-black/30 flex items-center justify-center"
             >
-              <X className="w-6 h-6 text-white" />
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
             </button>
             {isRecording && (
               <div className="flex items-center bg-red-600 px-3 py-1 rounded-full">
@@ -202,7 +203,9 @@ export default function VideoUpload({
                 onClick={stopRecording}
                 className="w-20 h-20 rounded-full bg-red-600 border-4 border-white flex items-center justify-center shadow-lg"
               >
-                <Square className="w-8 h-8 text-white fill-white" />
+                <svg className="w-8 h-8 text-white fill-white" viewBox="0 0 24 24">
+                  <rect x="6" y="6" width="12" height="12" />
+                </svg>
               </button>
             </div>
 
@@ -229,7 +232,14 @@ export default function VideoUpload({
         {/* Error state */}
         {error && (
           <>
-            <Video className="h-8 w-8 text-red-500 mb-4" />
+            <svg className="h-8 w-8 text-red-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
+              />
+            </svg>
             <p className="text-red-700 text-center mb-4 max-w-md">{error}</p>
             <Button onClick={startCamera} className="bg-blue-500 hover:bg-blue-600 text-white px-8">
               Try Again
@@ -240,7 +250,14 @@ export default function VideoUpload({
         {/* Recorded video state */}
         {recordedVideo && !uploading && !error && (
           <>
-            <Video className="h-8 w-8 text-green-500 mb-4" />
+            <svg className="h-8 w-8 text-green-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
+              />
+            </svg>
             <p className="text-gray-700 text-center mb-2">Video recorded successfully!</p>
             <p className="text-gray-600 text-sm mb-4">Duration: {formatTime(recordingTime)}</p>
             <div className="flex gap-3">
@@ -252,7 +269,14 @@ export default function VideoUpload({
                 Retake
               </Button>
               <Button onClick={uploadRecordedVideo} className="bg-blue-500 hover:bg-blue-600 text-white">
-                <Upload className="mr-2 h-4 w-4" />
+                <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                  />
+                </svg>
                 Analyze Video
               </Button>
             </div>
@@ -270,7 +294,14 @@ export default function VideoUpload({
         {/* Initial state */}
         {!recordedVideo && !uploading && !error && (
           <>
-            <Video className="h-8 w-8 text-blue-500 mb-4" />
+            <svg className="h-8 w-8 text-blue-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
+              />
+            </svg>
             <Button onClick={startCamera} className="bg-blue-500 hover:bg-blue-600 text-white px-8">
               Record Video
             </Button>

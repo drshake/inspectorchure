@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useRef } from "react"
 import { Progress } from "@/components/ui/progress"
-import { Clock } from "lucide-react"
 import Image from "next/image"
+import { Button } from "@/components/ui/button"
+import html2canvas from "html2canvas"
 
 type AnalysisStatus = "idle" | "analyzing" | "complete"
 
@@ -40,6 +41,7 @@ interface ResultsDisplayProps {
 export default function ResultsDisplay({ status, fileName, generateAnalysis }: ResultsDisplayProps) {
   const [progress, setProgress] = useState(0)
   const [results, setResults] = useState<AnalysisResult | null>(null)
+  const [isSharing, setIsSharing] = useState(false)
   const reportRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -79,6 +81,64 @@ export default function ResultsDisplay({ status, fileName, generateAnalysis }: R
     return "text-red-500"
   }
 
+  const handleShare = async () => {
+    if (!reportRef.current || !results) return
+
+    setIsSharing(true)
+
+    try {
+      // Capture the report as an image
+      const canvas = await html2canvas(reportRef.current, {
+        backgroundColor: "#ffffff",
+        scale: 2,
+        logging: false,
+        useCORS: true,
+      })
+
+      // Convert canvas to blob
+      canvas.toBlob(async (blob) => {
+        if (!blob) {
+          throw new Error("Failed to create image")
+        }
+
+        const file = new File([blob], "hygiene-report.png", { type: "image/png" })
+        const shareText = `My Food Safety Hygiene Score: ${results.score}% 🎯\n\nI am Churred - Setting the new global food safety standard! 🍽️✨`
+
+        // Check if Web Share API is available (mainly for mobile)
+        if (navigator.share && navigator.canShare({ files: [file] })) {
+          try {
+            await navigator.share({
+              title: "My Hygiene Analysis Report",
+              text: shareText,
+              files: [file],
+            })
+          } catch (err: any) {
+            if (err.name !== "AbortError") {
+              console.error("Share failed:", err)
+              // Fallback to download
+              downloadImage(canvas)
+            }
+          }
+        } else {
+          // Fallback: Download the image
+          downloadImage(canvas)
+        }
+      }, "image/png")
+    } catch (error) {
+      console.error("Error sharing report:", error)
+      alert("Failed to share report. Please try again.")
+    } finally {
+      setIsSharing(false)
+    }
+  }
+
+  const downloadImage = (canvas: HTMLCanvasElement) => {
+    const link = document.createElement("a")
+    link.download = `hygiene-report-${new Date().getTime()}.png`
+    link.href = canvas.toDataURL()
+    link.click()
+  }
+
   if (status === "idle") {
     return null
   }
@@ -116,6 +176,22 @@ export default function ResultsDisplay({ status, fileName, generateAnalysis }: R
     <div className="bg-white space-y-8 mt-8 relative pb-16">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-semibold text-blue-900">Hygiene Analysis Results</h2>
+        <Button
+          onClick={handleShare}
+          disabled={isSharing}
+          className="bg-blue-500 hover:bg-blue-600 text-white"
+          size="sm"
+        >
+          <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
+            />
+          </svg>
+          {isSharing ? "Preparing..." : "Share"}
+        </Button>
       </div>
 
       <div ref={reportRef} className="space-y-6">
@@ -191,7 +267,14 @@ export default function ResultsDisplay({ status, fileName, generateAnalysis }: R
                       {finding.type === "critical" ? "Critical: " : "Moderate: "}
                     </span>
                     <div className="flex items-center text-xs text-gray-600 bg-white px-2 py-1 rounded">
-                      <Clock className="h-3 w-3 mr-1" />
+                      <svg className="h-3 w-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
                       <span>Timestamp: {finding.timestamp}</span>
                     </div>
                   </div>
@@ -213,11 +296,9 @@ export default function ResultsDisplay({ status, fileName, generateAnalysis }: R
             ))}
           </div>
         </section>
-      </div>
 
-      {/* Churred Watermark */}
-      <div className="absolute bottom-0 right-0 flex items-center p-4">
-        <div className="flex items-center">
+        {/* Churred Watermark */}
+        <div className="flex items-center justify-end pt-4">
           <div className="inline-flex items-center">
             <span className="font-bold text-lg text-blue-900 mr-1">I am</span>
             <div className="relative h-7 w-7 mr-[-5px]">
