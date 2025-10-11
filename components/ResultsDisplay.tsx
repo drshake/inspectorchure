@@ -201,63 +201,52 @@ export default function ResultsDisplay({ status, fileName, generateAnalysis }: R
       const pdf = new jsPDF("p", "mm", "a4")
       const pageWidth = pdf.internal.pageSize.getWidth()
       const pageHeight = pdf.internal.pageSize.getHeight()
-      const margin = 20
+      const margin = 15
       const contentWidth = pageWidth - 2 * margin
       let yPos = margin
-
-      // Helper function to add new page if needed
-      const checkAddPage = (spaceNeeded: number) => {
-        if (yPos + spaceNeeded > pageHeight - margin) {
-          pdf.addPage()
-          yPos = margin
-          return true
-        }
-        return false
-      }
 
       // Background color
       pdf.setFillColor(249, 250, 251)
       pdf.rect(0, 0, pageWidth, pageHeight, "F")
 
       // Header
-      pdf.setFontSize(24)
+      pdf.setFontSize(20)
       pdf.setFont("helvetica", "bold")
       pdf.setTextColor(17, 24, 39)
       pdf.text("Food Safety Hygiene Report", pageWidth / 2, yPos, { align: "center" })
-      yPos += 15
+      yPos += 10
 
       // Score
-      pdf.setFontSize(48)
+      pdf.setFontSize(42)
       pdf.setFont("helvetica", "bold")
       const scoreColor: [number, number, number] =
         results.score >= 80 ? [34, 197, 94] : results.score >= 61 ? [234, 179, 8] : [239, 68, 68]
       pdf.setTextColor(scoreColor[0], scoreColor[1], scoreColor[2])
-      pdf.text(`${results.score}%`, pageWidth / 2, yPos + 15, { align: "center" })
-      yPos += 25
+      pdf.text(`${results.score}%`, pageWidth / 2, yPos + 12, { align: "center" })
+      yPos += 18
 
       // Status Badge
-      pdf.setFontSize(14)
+      pdf.setFontSize(12)
       pdf.setFont("helvetica", "bold")
       const scoreStatus = getScoreStatus(results.score)
       pdf.text(scoreStatus.label, pageWidth / 2, yPos, { align: "center" })
-      yPos += 10
+      yPos += 8
 
       // Analysis Date & Time
-      pdf.setFontSize(10)
+      pdf.setFontSize(9)
       pdf.setFont("helvetica", "normal")
       pdf.setTextColor(107, 114, 128)
       pdf.text(`Analyzed on ${results.analyzedAt}`, pageWidth / 2, yPos, { align: "center" })
-      yPos += 15
+      yPos += 10
 
       // Protection Measures Section
-      checkAddPage(40)
-      pdf.setFontSize(14)
+      pdf.setFontSize(11)
       pdf.setFont("helvetica", "bold")
       pdf.setTextColor(59, 130, 246)
       pdf.text("Protection Measures", margin, yPos)
-      yPos += 8
+      yPos += 6
 
-      pdf.setFontSize(10)
+      pdf.setFontSize(8)
       pdf.setFont("helvetica", "normal")
       pdf.setTextColor(17, 24, 39)
 
@@ -267,34 +256,31 @@ export default function ResultsDisplay({ status, fileName, generateAnalysis }: R
       ]
 
       protectionMeasures.forEach(([key, value]) => {
-        checkAddPage(15)
+        pdf.text(key as string, margin + 2, yPos)
+        pdf.text(`${(value as number).toFixed(1)}%`, pageWidth - margin - 2, yPos, { align: "right" })
+        yPos += 3
 
-        pdf.text(key as string, margin + 5, yPos)
-        pdf.text(`${(value as number).toFixed(1)}%`, pageWidth - margin - 5, yPos, { align: "right" })
-        yPos += 5
-
-        const barWidth = contentWidth - 10
-        const barHeight = 3
+        const barWidth = contentWidth - 4
+        const barHeight = 2
 
         pdf.setFillColor(229, 231, 235)
-        pdf.rect(margin + 5, yPos, barWidth, barHeight, "F")
+        pdf.rect(margin + 2, yPos, barWidth, barHeight, "F")
 
         pdf.setFillColor(34, 197, 94)
-        pdf.rect(margin + 5, yPos, (barWidth * (value as number)) / 100, barHeight, "F")
-        yPos += 10
+        pdf.rect(margin + 2, yPos, (barWidth * (value as number)) / 100, barHeight, "F")
+        yPos += 5
       })
 
-      yPos += 5
+      yPos += 2
 
       // Food Handling Section
-      checkAddPage(40)
-      pdf.setFontSize(14)
+      pdf.setFontSize(11)
       pdf.setFont("helvetica", "bold")
       pdf.setTextColor(59, 130, 246)
       pdf.text("Food Handling", margin, yPos)
-      yPos += 8
+      yPos += 6
 
-      pdf.setFontSize(10)
+      pdf.setFontSize(8)
       pdf.setFont("helvetica", "normal")
       pdf.setTextColor(17, 24, 39)
 
@@ -304,39 +290,39 @@ export default function ResultsDisplay({ status, fileName, generateAnalysis }: R
       ]
 
       foodHandling.forEach(([key, value]) => {
-        checkAddPage(15)
+        pdf.text(key as string, margin + 2, yPos)
+        pdf.text(`${(value as number).toFixed(1)}%`, pageWidth - margin - 2, yPos, { align: "right" })
+        yPos += 3
 
-        pdf.text(key as string, margin + 5, yPos)
-        pdf.text(`${(value as number).toFixed(1)}%`, pageWidth - margin - 5, yPos, { align: "right" })
-        yPos += 5
-
-        const barWidth = contentWidth - 10
-        const barHeight = 3
+        const barWidth = contentWidth - 4
+        const barHeight = 2
 
         pdf.setFillColor(229, 231, 235)
-        pdf.rect(margin + 5, yPos, barWidth, barHeight, "F")
+        pdf.rect(margin + 2, yPos, barWidth, barHeight, "F")
 
         pdf.setFillColor(34, 197, 94)
-        pdf.rect(margin + 5, yPos, (barWidth * (value as number)) / 100, barHeight, "F")
-        yPos += 10
+        pdf.rect(margin + 2, yPos, (barWidth * (value as number)) / 100, barHeight, "F")
+        yPos += 5
       })
 
-      yPos += 5
+      yPos += 2
 
       // Key Findings Section
-      checkAddPage(40)
-      pdf.setFontSize(14)
+      pdf.setFontSize(11)
       pdf.setFont("helvetica", "bold")
       pdf.setTextColor(17, 24, 39)
       pdf.text("Key Findings", margin, yPos)
-      yPos += 8
+      yPos += 6
 
-      pdf.setFontSize(9)
+      pdf.setFontSize(7)
       pdf.setFont("helvetica", "normal")
-      results.keyFindings.forEach((finding) => {
-        const lines = pdf.splitTextToSize(finding.message, contentWidth - 10)
-        const boxHeight = 8 + lines.length * 4
-        checkAddPage(boxHeight + 5)
+
+      // Limit to first 3 findings to fit on one page
+      const limitedFindings = results.keyFindings.slice(0, 3)
+      limitedFindings.forEach((finding) => {
+        const maxWidth = contentWidth - 20
+        const lines = pdf.splitTextToSize(finding.message, maxWidth)
+        const boxHeight = 5 + Math.min(lines.length, 2) * 2.5
 
         const bgColor: [number, number, number] = finding.type === "critical" ? [254, 242, 242] : [254, 249, 195]
         pdf.setFillColor(bgColor[0], bgColor[1], bgColor[2])
@@ -345,52 +331,76 @@ export default function ResultsDisplay({ status, fileName, generateAnalysis }: R
         const textColor: [number, number, number] = finding.type === "critical" ? [185, 28, 28] : [161, 98, 7]
         pdf.setTextColor(textColor[0], textColor[1], textColor[2])
         pdf.setFont("helvetica", "bold")
-        pdf.text(`${finding.type === "critical" ? "Critical" : "Moderate"}:`, margin + 3, yPos + 5)
+        pdf.text(`${finding.type === "critical" ? "Critical" : "Moderate"}:`, margin + 2, yPos + 3)
 
         pdf.setTextColor(107, 114, 128)
         pdf.setFont("helvetica", "normal")
-        pdf.text(finding.timestamp, pageWidth - margin - 3, yPos + 5, { align: "right" })
+        pdf.text(finding.timestamp, pageWidth - margin - 2, yPos + 3, { align: "right" })
 
         pdf.setTextColor(17, 24, 39)
-        pdf.text(lines, margin + 3, yPos + 10)
+        // Only show first 2 lines if text is too long
+        const displayLines = lines.slice(0, 2)
+        pdf.text(displayLines, margin + 2, yPos + 5.5)
 
-        yPos += boxHeight + 3
+        yPos += boxHeight + 1.5
       })
 
-      yPos += 5
+      yPos += 2
 
       // Improvement Suggestions Section
-      checkAddPage(40)
-      pdf.setFontSize(14)
+      pdf.setFontSize(11)
       pdf.setFont("helvetica", "bold")
       pdf.setTextColor(17, 24, 39)
       pdf.text("Improvement Suggestions", margin, yPos)
-      yPos += 8
+      yPos += 6
 
-      pdf.setFontSize(9)
+      pdf.setFontSize(7)
       pdf.setFont("helvetica", "normal")
-      results.improvements.forEach((suggestion) => {
-        const lines = pdf.splitTextToSize(suggestion, contentWidth - 10)
-        const boxHeight = 8 + lines.length * 4
 
-        checkAddPage(boxHeight + 3)
+      // Limit to first 3 suggestions to fit on one page
+      const limitedSuggestions = results.improvements.slice(0, 3)
+      limitedSuggestions.forEach((suggestion) => {
+        const maxWidth = contentWidth - 6
+        const lines = pdf.splitTextToSize(suggestion, maxWidth)
+        const boxHeight = 4 + Math.min(lines.length, 2) * 2.5
 
         pdf.setFillColor(240, 253, 244)
         pdf.rect(margin, yPos, contentWidth, boxHeight, "F")
 
         pdf.setTextColor(17, 24, 39)
-        pdf.text(lines, margin + 3, yPos + 5)
+        // Only show first 2 lines if text is too long
+        const displayLines = lines.slice(0, 2)
+        pdf.text(displayLines, margin + 2, yPos + 3)
 
-        yPos += boxHeight + 3
+        yPos += boxHeight + 1.5
       })
 
-      // Footer
-      checkAddPage(15)
-      yPos = pageHeight - margin - 10
-      pdf.setFontSize(12)
+      // Footer - "I am Churred" with bold styling
+      yPos = pageHeight - margin - 8
+
+      // Create a colored box background for emphasis
+      const footerBoxWidth = 50
+      const footerBoxHeight = 8
+      const footerBoxX = (pageWidth - footerBoxWidth) / 2
+
+      // Add subtle background
+      pdf.setFillColor(240, 248, 255) // Light blue background
+      pdf.roundedRect(footerBoxX, yPos - 2, footerBoxWidth, footerBoxHeight, 2, 2, "F")
+
+      // "I am" text
+      pdf.setFontSize(14)
       pdf.setFont("helvetica", "bold")
-      pdf.setTextColor(17, 24, 39)
-      pdf.text("I am Churred", pageWidth / 2, yPos, { align: "center" })
+      pdf.setTextColor(30, 64, 175) // Blue color matching the logo
+      const iAmText = "I am "
+      const iAmWidth = pdf.getTextWidth(iAmText)
+      const startX = (pageWidth - (iAmWidth + pdf.getTextWidth("Churred"))) / 2
+      pdf.text(iAmText, startX, yPos + 4)
+
+      // "Churred" text with special styling
+      pdf.setFontSize(16) // Slightly larger
+      pdf.setFont("helvetica", "bold")
+      pdf.setTextColor(59, 130, 246) // Bright blue matching the C logo
+      pdf.text("Churred", startX + iAmWidth, yPos + 4)
 
       // Save PDF
       const timestamp = new Date().getTime()
