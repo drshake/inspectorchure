@@ -305,9 +305,9 @@ export default function ResultsDisplay({ status, fileName, generateAnalysis }: R
         yPos += 6
       })
 
-      yPos += 3
+      yPos += 4
 
-      // Key Findings Section
+      // Key Findings Section - with better spacing
       pdf.setFontSize(11)
       pdf.setFont("helvetica", "bold")
       pdf.setTextColor(17, 24, 39)
@@ -319,10 +319,10 @@ export default function ResultsDisplay({ status, fileName, generateAnalysis }: R
 
       // Limit to first 3 findings to fit on one page
       const limitedFindings = results.keyFindings.slice(0, 3)
-      limitedFindings.forEach((finding) => {
+      limitedFindings.forEach((finding, index) => {
         const maxWidth = contentWidth - 24
         const lines = pdf.splitTextToSize(finding.message, maxWidth)
-        const boxHeight = 6 + Math.min(lines.length, 2) * 3
+        const boxHeight = 8 + Math.min(lines.length, 2) * 3.5
 
         const bgColor: [number, number, number] = finding.type === "critical" ? [254, 242, 242] : [254, 249, 195]
         pdf.setFillColor(bgColor[0], bgColor[1], bgColor[2])
@@ -331,20 +331,20 @@ export default function ResultsDisplay({ status, fileName, generateAnalysis }: R
         const textColor: [number, number, number] = finding.type === "critical" ? [185, 28, 28] : [161, 98, 7]
         pdf.setTextColor(textColor[0], textColor[1], textColor[2])
         pdf.setFont("helvetica", "bold")
-        pdf.text(`${finding.type === "critical" ? "Critical" : "Moderate"}:`, margin + 3, yPos + 4)
+        pdf.text(`${finding.type === "critical" ? "Critical" : "Moderate"}:`, margin + 3, yPos + 4.5)
 
         pdf.setTextColor(107, 114, 128)
         pdf.setFont("helvetica", "normal")
-        pdf.text(finding.timestamp, pageWidth - margin - 3, yPos + 4, { align: "right" })
+        pdf.text(finding.timestamp, pageWidth - margin - 3, yPos + 4.5, { align: "right" })
 
         pdf.setTextColor(17, 24, 39)
         const displayLines = lines.slice(0, 2)
-        pdf.text(displayLines, margin + 3, yPos + 7)
+        pdf.text(displayLines, margin + 3, yPos + 8)
 
-        yPos += boxHeight + 2
+        yPos += boxHeight + 3 // More space between findings
       })
 
-      yPos += 3
+      yPos += 4
 
       // Improvement Suggestions Section
       pdf.setFontSize(11)
@@ -361,30 +361,35 @@ export default function ResultsDisplay({ status, fileName, generateAnalysis }: R
       limitedSuggestions.forEach((suggestion) => {
         const maxWidth = contentWidth - 8
         const lines = pdf.splitTextToSize(suggestion, maxWidth)
-        const boxHeight = 5 + Math.min(lines.length, 2) * 3
+        const boxHeight = 6 + Math.min(lines.length, 2) * 3.5
 
         pdf.setFillColor(240, 253, 244)
         pdf.rect(margin, yPos, contentWidth, boxHeight, "F")
 
         pdf.setTextColor(17, 24, 39)
         const displayLines = lines.slice(0, 2)
-        pdf.text(displayLines, margin + 3, yPos + 4)
+        pdf.text(displayLines, margin + 3, yPos + 4.5)
 
-        yPos += boxHeight + 2
+        yPos += boxHeight + 2.5
       })
 
       yPos += 8
 
-      // Footer - "I am [C logo]hurred" - positioned closer and properly aligned
+      // Footer - "I am [C logo]hurred" - properly aligned at baseline
       pdf.setFontSize(18)
       pdf.setFont("helvetica", "bold")
       pdf.setTextColor(30, 64, 175) // Dark blue color
 
       const iAmText = "I am "
       const hurredText = "hurred"
+
+      // Get text dimensions
       const iAmWidth = pdf.getTextWidth(iAmText)
       const hurredWidth = pdf.getTextWidth(hurredText)
-      const logoSize = 7 // Logo size in mm
+
+      // Logo should match the height of the text (18pt = ~6.35mm)
+      const textHeight = 18 * 0.3527 // Convert points to mm
+      const logoSize = textHeight // Logo same height as text
 
       // Calculate total width and center position
       const totalWidth = iAmWidth + logoSize + hurredWidth
@@ -393,7 +398,7 @@ export default function ResultsDisplay({ status, fileName, generateAnalysis }: R
       // Draw "I am "
       pdf.text(iAmText, startX, yPos)
 
-      // Add the C logo image - positioned at baseline (yPos - 6) to align with text
+      // Add the C logo image - positioned to sit on the same baseline as text
       try {
         const logoUrl = "/churred-logo.png"
         const response = await fetch(logoUrl)
@@ -403,8 +408,9 @@ export default function ResultsDisplay({ status, fileName, generateAnalysis }: R
         await new Promise((resolve) => {
           reader.onloadend = () => {
             const base64data = reader.result as string
-            // Position logo at baseline (yPos - 6) to align with text
-            pdf.addImage(base64data, "PNG", startX + iAmWidth, yPos - 6, logoSize, logoSize)
+            // Position logo so its bottom aligns with text baseline
+            // yPos is the text baseline, so logo top should be at yPos - logoSize
+            pdf.addImage(base64data, "PNG", startX + iAmWidth, yPos - logoSize + 1.5, logoSize, logoSize)
             resolve(true)
           }
           reader.readAsDataURL(blob)
@@ -413,11 +419,11 @@ export default function ResultsDisplay({ status, fileName, generateAnalysis }: R
         console.error("Error loading logo:", error)
         // Fallback: just show "C" if logo fails
         pdf.setTextColor(220, 38, 38) // Red color for C
-        pdf.text("C", startX + iAmWidth + 1, yPos)
+        pdf.text("C", startX + iAmWidth, yPos)
         pdf.setTextColor(30, 64, 175) // Back to dark blue
       }
 
-      // Draw "hurred" right after the logo - no gap
+      // Draw "hurred" right after the logo
       pdf.text(hurredText, startX + iAmWidth + logoSize, yPos)
 
       // Save PDF
