@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import Image from "next/image"
 import { use } from "react"
+import { jsPDF } from "jspdf"
 
 interface ReportData {
   vendorId: string
@@ -27,6 +28,11 @@ export default function VendorReportPage({ params }: { params: Promise<{ vendorI
   const [error, setError] = useState<string | null>(null)
   const [expanded, setExpanded] = useState(false)
   const [showToast, setShowToast] = useState(false)
+  const [toastMessage, setToastMessage] = useState("")
+  const [isDownloading, setIsDownloading] = useState(false)
+
+  // Simulate vendor check - replace with actual auth later
+  const isVendor = true
 
   useEffect(() => {
     async function fetchReport() {
@@ -47,13 +53,232 @@ export default function VendorReportPage({ params }: { params: Promise<{ vendorI
     fetchReport()
   }, [resolvedParams.vendorId])
 
+  const showToastMessage = (message: string) => {
+    setToastMessage(message)
+    setShowToast(true)
+    setTimeout(() => setShowToast(false), 3000)
+  }
+
   const handleShare = async () => {
     try {
       await navigator.clipboard.writeText(window.location.href)
-      setShowToast(true)
-      setTimeout(() => setShowToast(false), 3000)
+      showToastMessage("Link copied to clipboard!")
     } catch (err) {
       console.error("Failed to copy link:", err)
+    }
+  }
+
+  const handleDownloadPDF = async () => {
+    if (!report) return
+
+    setIsDownloading(true)
+
+    try {
+      const pdf = new jsPDF("p", "mm", "a4")
+      const pageWidth = pdf.internal.pageSize.getWidth()
+      const pageHeight = pdf.internal.pageSize.getHeight()
+      const margin = 20
+      const contentWidth = pageWidth - 2 * margin
+      let yPos = margin
+
+      // Helper function to add new page if needed
+      const checkAddPage = (spaceNeeded: number) => {
+        if (yPos + spaceNeeded > pageHeight - margin) {
+          pdf.addPage()
+          yPos = margin
+          return true
+        }
+        return false
+      }
+
+      // Background color
+      pdf.setFillColor(249, 250, 251)
+      pdf.rect(0, 0, pageWidth, pageHeight, "F")
+
+      // Header - Vendor Name
+      pdf.setFontSize(24)
+      pdf.setTextColor(17, 24, 39)
+      pdf.text(report.vendorName, pageWidth / 2, yPos, { align: "center" })
+      yPos += 10
+
+      pdf.setFontSize(14)
+      pdf.setTextColor(75, 85, 99)
+      pdf.text("Food Safety Hygiene Report", pageWidth / 2, yPos, { align: "center" })
+      yPos += 15
+
+      // Score Circle (simplified as text)
+      pdf.setFontSize(48)
+      pdf.setTextColor(
+        report.score >= 80 ? 34 : report.score >= 61 ? 234 : 239,
+        report.score >= 80 ? 197 : report.score >= 61 ? 179 : 68,
+        report.score >= 80 ? 94 : report.score >= 61 ? 8 : 68,
+      )
+      pdf.text(`${report.score}%`, pageWidth / 2, yPos + 15, { align: "center" })
+      yPos += 25
+
+      // Status Badge
+      pdf.setFontSize(12)
+      const statusColor =
+        report.status === "Excellent" || report.status === "Good"
+          ? [34, 197, 94]
+          : report.status === "Needs improvement"
+            ? [234, 179, 8]
+            : [239, 68, 68]
+      pdf.setTextColor(statusColor[0], statusColor[1], statusColor[2])
+      pdf.text(report.status, pageWidth / 2, yPos, { align: "center" })
+      yPos += 10
+
+      // Analysis Date
+      pdf.setFontSize(10)
+      pdf.setTextColor(107, 114, 128)
+      const formattedDate = new Date(report.analysisDate).toLocaleString("en-US", {
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+      pdf.text(`Analyzed on ${formattedDate}`, pageWidth / 2, yPos, { align: "center" })
+      yPos += 15
+
+      // Protection Measures Section
+      checkAddPage(40)
+      pdf.setFontSize(14)
+      pdf.setTextColor(59, 130, 246)
+      pdf.text("Protection Measures", margin, yPos)
+      yPos += 8
+
+      pdf.setFontSize(10)
+      pdf.setTextColor(17, 24, 39)
+      Object.entries(report.protectionMeasures).forEach(([key, value]) => {
+        checkAddPage(15)
+
+        // Label and value
+        pdf.text(key, margin + 5, yPos)
+        pdf.text(`${value.toFixed(1)}%`, pageWidth - margin - 5, yPos, { align: "right" })
+        yPos += 5
+
+        // Progress bar
+        const barWidth = contentWidth - 10
+        const barHeight = 3
+
+        // Background bar
+        pdf.setFillColor(229, 231, 235)
+        pdf.rect(margin + 5, yPos, barWidth, barHeight, "F")
+
+        // Progress bar
+        pdf.setFillColor(34, 197, 94)
+        pdf.rect(margin + 5, yPos, (barWidth * value) / 100, barHeight, "F")
+        yPos += 10
+      })
+
+      yPos += 5
+
+      // Food Handling Section
+      checkAddPage(40)
+      pdf.setFontSize(14)
+      pdf.setTextColor(59, 130, 246)
+      pdf.text("Food Handling", margin, yPos)
+      yPos += 8
+
+      pdf.setFontSize(10)
+      pdf.setTextColor(17, 24, 39)
+      Object.entries(report.foodHandling).forEach(([key, value]) => {
+        checkAddPage(15)
+
+        pdf.text(key, margin + 5, yPos)
+        pdf.text(`${value.toFixed(1)}%`, pageWidth - margin - 5, yPos, { align: "right" })
+        yPos += 5
+
+        const barWidth = contentWidth - 10
+        const barHeight = 3
+
+        pdf.setFillColor(229, 231, 235)
+        pdf.rect(margin + 5, yPos, barWidth, barHeight, "F")
+
+        pdf.setFillColor(34, 197, 94)
+        pdf.rect(margin + 5, yPos, (barWidth * value) / 100, barHeight, "F")
+        yPos += 10
+      })
+
+      yPos += 5
+
+      // Key Findings Section
+      checkAddPage(40)
+      pdf.setFontSize(14)
+      pdf.setTextColor(17, 24, 39)
+      pdf.text("Key Findings", margin, yPos)
+      yPos += 8
+
+      pdf.setFontSize(9)
+      report.keyFindings.forEach((finding) => {
+        const boxHeight = 15
+        checkAddPage(boxHeight + 5)
+
+        // Background box
+        const bgColor = finding.level === "Critical" ? [254, 242, 242] : [254, 249, 195]
+        pdf.setFillColor(bgColor[0], bgColor[1], bgColor[2])
+        pdf.rect(margin, yPos, contentWidth, boxHeight, "F")
+
+        // Level text
+        const textColor = finding.level === "Critical" ? [185, 28, 28] : [161, 98, 7]
+        pdf.setTextColor(textColor[0], textColor[1], textColor[2])
+        pdf.text(`${finding.level}:`, margin + 3, yPos + 5)
+
+        // Timestamp
+        pdf.setTextColor(107, 114, 128)
+        pdf.text(finding.timestamp, pageWidth - margin - 3, yPos + 5, { align: "right" })
+
+        // Message
+        pdf.setTextColor(17, 24, 39)
+        const splitMessage = pdf.splitTextToSize(finding.message, contentWidth - 10)
+        pdf.text(splitMessage, margin + 3, yPos + 10)
+
+        yPos += boxHeight + 3
+      })
+
+      yPos += 5
+
+      // Improvement Suggestions Section
+      checkAddPage(40)
+      pdf.setFontSize(14)
+      pdf.setTextColor(17, 24, 39)
+      pdf.text("Improvement Suggestions", margin, yPos)
+      yPos += 8
+
+      pdf.setFontSize(9)
+      report.improvementSuggestions.forEach((suggestion) => {
+        const lines = pdf.splitTextToSize(suggestion, contentWidth - 10)
+        const boxHeight = 5 + lines.length * 4
+
+        checkAddPage(boxHeight + 3)
+
+        // Background box
+        pdf.setFillColor(240, 253, 244)
+        pdf.rect(margin, yPos, contentWidth, boxHeight, "F")
+
+        // Text
+        pdf.setTextColor(17, 24, 39)
+        pdf.text(lines, margin + 3, yPos + 5)
+
+        yPos += boxHeight + 3
+      })
+
+      // Footer - "I am Churred"
+      checkAddPage(15)
+      yPos = pageHeight - margin - 10
+      pdf.setFontSize(12)
+      pdf.setTextColor(17, 24, 39)
+      pdf.text("I am Churred", pageWidth / 2, yPos, { align: "center" })
+
+      // Save PDF
+      pdf.save(`ChureAI_Report_${report.vendorId}.pdf`)
+      showToastMessage("Report downloaded successfully!")
+    } catch (error) {
+      console.error("Error generating PDF:", error)
+      showToastMessage("Failed to download report. Please try again.")
+    } finally {
+      setIsDownloading(false)
     }
   }
 
@@ -165,7 +390,7 @@ export default function VendorReportPage({ params }: { params: Promise<{ vendorI
             <p className="text-sm text-gray-600 mb-6">Analyzed on {formatDate(report.analysisDate)}</p>
 
             {/* Action Buttons */}
-            <div className="flex gap-3 justify-center mb-6">
+            <div className="flex gap-3 justify-center mb-6 flex-wrap">
               <button
                 onClick={() => setExpanded(!expanded)}
                 className="px-6 py-3 bg-green-500 text-white rounded-lg font-medium hover:bg-green-600 transition-colors flex items-center gap-2"
@@ -194,6 +419,23 @@ export default function VendorReportPage({ params }: { params: Promise<{ vendorI
                 </svg>
                 Share Report
               </button>
+              {isVendor && (
+                <button
+                  onClick={handleDownloadPDF}
+                  disabled={isDownloading}
+                  className="px-6 py-3 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
+                  </svg>
+                  {isDownloading ? "Generating..." : "Download PDF"}
+                </button>
+              )}
             </div>
 
             {/* Churred Badge */}
@@ -310,11 +552,11 @@ export default function VendorReportPage({ params }: { params: Promise<{ vendorI
 
       {/* Toast Notification */}
       {showToast && (
-        <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-2 animate-slide-up">
+        <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-2 animate-slide-up z-50">
           <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
           </svg>
-          Link copied to clipboard!
+          {toastMessage}
         </div>
       )}
     </div>
