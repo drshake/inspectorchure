@@ -226,25 +226,25 @@ export default function ResultsDisplay({ status, fileName, generateAnalysis }: R
       yPos += 18
 
       // Status Badge
-      pdf.setFontSize(12)
+      pdf.setFontSize(11)
       pdf.setFont("helvetica", "bold")
       const scoreStatus = getScoreStatus(results.score)
       pdf.text(scoreStatus.label, pageWidth / 2, yPos, { align: "center" })
-      yPos += 8
+      yPos += 7
 
       // Analysis Date & Time
-      pdf.setFontSize(9)
+      pdf.setFontSize(8)
       pdf.setFont("helvetica", "normal")
       pdf.setTextColor(107, 114, 128)
       pdf.text(`Analyzed on ${results.analyzedAt}`, pageWidth / 2, yPos, { align: "center" })
-      yPos += 10
+      yPos += 8
 
       // Protection Measures Section
-      pdf.setFontSize(11)
+      pdf.setFontSize(10)
       pdf.setFont("helvetica", "bold")
       pdf.setTextColor(59, 130, 246)
       pdf.text("Protection Measures", margin, yPos)
-      yPos += 6
+      yPos += 5
 
       pdf.setFontSize(8)
       pdf.setFont("helvetica", "normal")
@@ -268,17 +268,17 @@ export default function ResultsDisplay({ status, fileName, generateAnalysis }: R
 
         pdf.setFillColor(34, 197, 94)
         pdf.rect(margin + 2, yPos, (barWidth * (value as number)) / 100, barHeight, "F")
-        yPos += 5
+        yPos += 4
       })
 
       yPos += 2
 
       // Food Handling Section
-      pdf.setFontSize(11)
+      pdf.setFontSize(10)
       pdf.setFont("helvetica", "bold")
       pdf.setTextColor(59, 130, 246)
       pdf.text("Food Handling", margin, yPos)
-      yPos += 6
+      yPos += 5
 
       pdf.setFontSize(8)
       pdf.setFont("helvetica", "normal")
@@ -302,17 +302,17 @@ export default function ResultsDisplay({ status, fileName, generateAnalysis }: R
 
         pdf.setFillColor(34, 197, 94)
         pdf.rect(margin + 2, yPos, (barWidth * (value as number)) / 100, barHeight, "F")
-        yPos += 5
+        yPos += 4
       })
 
       yPos += 2
 
       // Key Findings Section
-      pdf.setFontSize(11)
+      pdf.setFontSize(10)
       pdf.setFont("helvetica", "bold")
       pdf.setTextColor(17, 24, 39)
       pdf.text("Key Findings", margin, yPos)
-      yPos += 6
+      yPos += 5
 
       pdf.setFontSize(7)
       pdf.setFont("helvetica", "normal")
@@ -322,7 +322,7 @@ export default function ResultsDisplay({ status, fileName, generateAnalysis }: R
       limitedFindings.forEach((finding) => {
         const maxWidth = contentWidth - 20
         const lines = pdf.splitTextToSize(finding.message, maxWidth)
-        const boxHeight = 5 + Math.min(lines.length, 2) * 2.5
+        const boxHeight = 4.5 + Math.min(lines.length, 2) * 2.3
 
         const bgColor: [number, number, number] = finding.type === "critical" ? [254, 242, 242] : [254, 249, 195]
         pdf.setFillColor(bgColor[0], bgColor[1], bgColor[2])
@@ -340,19 +340,19 @@ export default function ResultsDisplay({ status, fileName, generateAnalysis }: R
         pdf.setTextColor(17, 24, 39)
         // Only show first 2 lines if text is too long
         const displayLines = lines.slice(0, 2)
-        pdf.text(displayLines, margin + 2, yPos + 5.5)
+        pdf.text(displayLines, margin + 2, yPos + 5)
 
-        yPos += boxHeight + 1.5
+        yPos += boxHeight + 1
       })
 
       yPos += 2
 
       // Improvement Suggestions Section
-      pdf.setFontSize(11)
+      pdf.setFontSize(10)
       pdf.setFont("helvetica", "bold")
       pdf.setTextColor(17, 24, 39)
       pdf.text("Improvement Suggestions", margin, yPos)
-      yPos += 6
+      yPos += 5
 
       pdf.setFontSize(7)
       pdf.setFont("helvetica", "normal")
@@ -362,7 +362,7 @@ export default function ResultsDisplay({ status, fileName, generateAnalysis }: R
       limitedSuggestions.forEach((suggestion) => {
         const maxWidth = contentWidth - 6
         const lines = pdf.splitTextToSize(suggestion, maxWidth)
-        const boxHeight = 4 + Math.min(lines.length, 2) * 2.5
+        const boxHeight = 3.5 + Math.min(lines.length, 2) * 2.3
 
         pdf.setFillColor(240, 253, 244)
         pdf.rect(margin, yPos, contentWidth, boxHeight, "F")
@@ -370,37 +370,55 @@ export default function ResultsDisplay({ status, fileName, generateAnalysis }: R
         pdf.setTextColor(17, 24, 39)
         // Only show first 2 lines if text is too long
         const displayLines = lines.slice(0, 2)
-        pdf.text(displayLines, margin + 2, yPos + 3)
+        pdf.text(displayLines, margin + 2, yPos + 2.8)
 
-        yPos += boxHeight + 1.5
+        yPos += boxHeight + 1
       })
 
-      // Footer - "I am Churred" with bold styling
-      yPos = pageHeight - margin - 8
+      yPos += 3
 
-      // Create a colored box background for emphasis
-      const footerBoxWidth = 50
-      const footerBoxHeight = 8
-      const footerBoxX = (pageWidth - footerBoxWidth) / 2
-
-      // Add subtle background
-      pdf.setFillColor(240, 248, 255) // Light blue background
-      pdf.roundedRect(footerBoxX, yPos - 2, footerBoxWidth, footerBoxHeight, 2, 2, "F")
-
-      // "I am" text
-      pdf.setFontSize(14)
+      // Footer - "I am [C logo]hurred" with logo
+      pdf.setFontSize(16)
       pdf.setFont("helvetica", "bold")
-      pdf.setTextColor(30, 64, 175) // Blue color matching the logo
+      pdf.setTextColor(30, 64, 175) // Dark blue color
+
       const iAmText = "I am "
+      const hurredText = "hurred"
       const iAmWidth = pdf.getTextWidth(iAmText)
-      const startX = (pageWidth - (iAmWidth + pdf.getTextWidth("Churred"))) / 2
-      pdf.text(iAmText, startX, yPos + 4)
+      const hurredWidth = pdf.getTextWidth(hurredText)
+      const logoSize = 6 // Logo size in mm
 
-      // "Churred" text with special styling
-      pdf.setFontSize(16) // Slightly larger
-      pdf.setFont("helvetica", "bold")
-      pdf.setTextColor(59, 130, 246) // Bright blue matching the C logo
-      pdf.text("Churred", startX + iAmWidth, yPos + 4)
+      // Calculate total width and center position
+      const totalWidth = iAmWidth + logoSize + hurredWidth
+      const startX = (pageWidth - totalWidth) / 2
+
+      // Draw "I am "
+      pdf.text(iAmText, startX, yPos)
+
+      // Add the C logo image
+      try {
+        // Fetch and add the logo
+        const logoUrl = "/churred-logo.png"
+        const response = await fetch(logoUrl)
+        const blob = await response.blob()
+        const reader = new FileReader()
+
+        await new Promise((resolve) => {
+          reader.onloadend = () => {
+            const base64data = reader.result as string
+            pdf.addImage(base64data, "PNG", startX + iAmWidth, yPos - 5, logoSize, logoSize)
+            resolve(true)
+          }
+          reader.readAsDataURL(blob)
+        })
+      } catch (error) {
+        console.error("Error loading logo:", error)
+        // Fallback: just show "C" if logo fails
+        pdf.text("C", startX + iAmWidth, yPos)
+      }
+
+      // Draw "hurred" after the logo
+      pdf.text(hurredText, startX + iAmWidth + logoSize, yPos)
 
       // Save PDF
       const timestamp = new Date().getTime()
