@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react"
 import Image from "next/image"
 import { use } from "react"
-import { jsPDF } from "jspdf"
 
 interface ReportData {
   vendorId: string
@@ -74,6 +73,8 @@ export default function VendorReportPage({ params }: { params: Promise<{ vendorI
     setIsDownloading(true)
 
     try {
+      // Dynamically import jsPDF
+      const { jsPDF } = await import("jspdf")
       const pdf = new jsPDF("p", "mm", "a4")
       const pageWidth = pdf.internal.pageSize.getWidth()
       const pageHeight = pdf.internal.pageSize.getHeight()
@@ -95,41 +96,31 @@ export default function VendorReportPage({ params }: { params: Promise<{ vendorI
       pdf.setFillColor(249, 250, 251)
       pdf.rect(0, 0, pageWidth, pageHeight, "F")
 
-      // Header - Vendor Name
+      // Header
       pdf.setFontSize(24)
+      pdf.setFont("helvetica", "bold")
       pdf.setTextColor(17, 24, 39)
-      pdf.text(report.vendorName, pageWidth / 2, yPos, { align: "center" })
-      yPos += 10
-
-      pdf.setFontSize(14)
-      pdf.setTextColor(75, 85, 99)
       pdf.text("Food Safety Hygiene Report", pageWidth / 2, yPos, { align: "center" })
       yPos += 15
 
-      // Score Circle (simplified as text)
+      // Score
       pdf.setFontSize(48)
-      pdf.setTextColor(
-        report.score >= 80 ? 34 : report.score >= 61 ? 234 : 239,
-        report.score >= 80 ? 197 : report.score >= 61 ? 179 : 68,
-        report.score >= 80 ? 94 : report.score >= 61 ? 8 : 68,
-      )
+      pdf.setFont("helvetica", "bold")
+      const scoreColor: [number, number, number] =
+        report.score >= 80 ? [34, 197, 94] : report.score >= 61 ? [234, 179, 8] : [239, 68, 68]
+      pdf.setTextColor(scoreColor[0], scoreColor[1], scoreColor[2])
       pdf.text(`${report.score}%`, pageWidth / 2, yPos + 15, { align: "center" })
       yPos += 25
 
       // Status Badge
-      pdf.setFontSize(12)
-      const statusColor =
-        report.status === "Excellent" || report.status === "Good"
-          ? [34, 197, 94]
-          : report.status === "Needs improvement"
-            ? [234, 179, 8]
-            : [239, 68, 68]
-      pdf.setTextColor(statusColor[0], statusColor[1], statusColor[2])
+      pdf.setFontSize(14)
+      pdf.setFont("helvetica", "bold")
       pdf.text(report.status, pageWidth / 2, yPos, { align: "center" })
       yPos += 10
 
       // Analysis Date
       pdf.setFontSize(10)
+      pdf.setFont("helvetica", "normal")
       pdf.setTextColor(107, 114, 128)
       const formattedDate = new Date(report.analysisDate).toLocaleString("en-US", {
         month: "long",
@@ -144,29 +135,27 @@ export default function VendorReportPage({ params }: { params: Promise<{ vendorI
       // Protection Measures Section
       checkAddPage(40)
       pdf.setFontSize(14)
+      pdf.setFont("helvetica", "bold")
       pdf.setTextColor(59, 130, 246)
       pdf.text("Protection Measures", margin, yPos)
       yPos += 8
 
       pdf.setFontSize(10)
+      pdf.setFont("helvetica", "normal")
       pdf.setTextColor(17, 24, 39)
       Object.entries(report.protectionMeasures).forEach(([key, value]) => {
         checkAddPage(15)
 
-        // Label and value
         pdf.text(key, margin + 5, yPos)
         pdf.text(`${value.toFixed(1)}%`, pageWidth - margin - 5, yPos, { align: "right" })
         yPos += 5
 
-        // Progress bar
         const barWidth = contentWidth - 10
         const barHeight = 3
 
-        // Background bar
         pdf.setFillColor(229, 231, 235)
         pdf.rect(margin + 5, yPos, barWidth, barHeight, "F")
 
-        // Progress bar
         pdf.setFillColor(34, 197, 94)
         pdf.rect(margin + 5, yPos, (barWidth * value) / 100, barHeight, "F")
         yPos += 10
@@ -177,11 +166,13 @@ export default function VendorReportPage({ params }: { params: Promise<{ vendorI
       // Food Handling Section
       checkAddPage(40)
       pdf.setFontSize(14)
+      pdf.setFont("helvetica", "bold")
       pdf.setTextColor(59, 130, 246)
       pdf.text("Food Handling", margin, yPos)
       yPos += 8
 
       pdf.setFontSize(10)
+      pdf.setFont("helvetica", "normal")
       pdf.setTextColor(17, 24, 39)
       Object.entries(report.foodHandling).forEach(([key, value]) => {
         checkAddPage(15)
@@ -206,33 +197,33 @@ export default function VendorReportPage({ params }: { params: Promise<{ vendorI
       // Key Findings Section
       checkAddPage(40)
       pdf.setFontSize(14)
+      pdf.setFont("helvetica", "bold")
       pdf.setTextColor(17, 24, 39)
       pdf.text("Key Findings", margin, yPos)
       yPos += 8
 
       pdf.setFontSize(9)
+      pdf.setFont("helvetica", "normal")
       report.keyFindings.forEach((finding) => {
-        const boxHeight = 15
+        const lines = pdf.splitTextToSize(finding.message, contentWidth - 10)
+        const boxHeight = 8 + lines.length * 4
         checkAddPage(boxHeight + 5)
 
-        // Background box
-        const bgColor = finding.level === "Critical" ? [254, 242, 242] : [254, 249, 195]
+        const bgColor: [number, number, number] = finding.level === "Critical" ? [254, 242, 242] : [254, 249, 195]
         pdf.setFillColor(bgColor[0], bgColor[1], bgColor[2])
         pdf.rect(margin, yPos, contentWidth, boxHeight, "F")
 
-        // Level text
-        const textColor = finding.level === "Critical" ? [185, 28, 28] : [161, 98, 7]
+        const textColor: [number, number, number] = finding.level === "Critical" ? [185, 28, 28] : [161, 98, 7]
         pdf.setTextColor(textColor[0], textColor[1], textColor[2])
+        pdf.setFont("helvetica", "bold")
         pdf.text(`${finding.level}:`, margin + 3, yPos + 5)
 
-        // Timestamp
         pdf.setTextColor(107, 114, 128)
+        pdf.setFont("helvetica", "normal")
         pdf.text(finding.timestamp, pageWidth - margin - 3, yPos + 5, { align: "right" })
 
-        // Message
         pdf.setTextColor(17, 24, 39)
-        const splitMessage = pdf.splitTextToSize(finding.message, contentWidth - 10)
-        pdf.text(splitMessage, margin + 3, yPos + 10)
+        pdf.text(lines, margin + 3, yPos + 10)
 
         yPos += boxHeight + 3
       })
@@ -242,32 +233,33 @@ export default function VendorReportPage({ params }: { params: Promise<{ vendorI
       // Improvement Suggestions Section
       checkAddPage(40)
       pdf.setFontSize(14)
+      pdf.setFont("helvetica", "bold")
       pdf.setTextColor(17, 24, 39)
       pdf.text("Improvement Suggestions", margin, yPos)
       yPos += 8
 
       pdf.setFontSize(9)
+      pdf.setFont("helvetica", "normal")
       report.improvementSuggestions.forEach((suggestion) => {
         const lines = pdf.splitTextToSize(suggestion, contentWidth - 10)
-        const boxHeight = 5 + lines.length * 4
+        const boxHeight = 8 + lines.length * 4
 
         checkAddPage(boxHeight + 3)
 
-        // Background box
         pdf.setFillColor(240, 253, 244)
         pdf.rect(margin, yPos, contentWidth, boxHeight, "F")
 
-        // Text
         pdf.setTextColor(17, 24, 39)
         pdf.text(lines, margin + 3, yPos + 5)
 
         yPos += boxHeight + 3
       })
 
-      // Footer - "I am Churred"
+      // Footer
       checkAddPage(15)
       yPos = pageHeight - margin - 10
       pdf.setFontSize(12)
+      pdf.setFont("helvetica", "bold")
       pdf.setTextColor(17, 24, 39)
       pdf.text("I am Churred", pageWidth / 2, yPos, { align: "center" })
 
@@ -343,8 +335,7 @@ export default function VendorReportPage({ params }: { params: Promise<{ vendorI
       <div className="max-w-3xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">{report.vendorName}</h1>
-          <p className="text-gray-600">Food Safety Hygiene Report</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Food Safety Hygiene Report</h1>
         </div>
 
         {/* Main Card */}
