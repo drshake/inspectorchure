@@ -3,21 +3,44 @@
 import { useState } from "react"
 import VideoUpload from "@/components/VideoUpload"
 import ResultsDisplay from "@/components/ResultsDisplay"
-import { generateAnalysis } from "@/lib/analysis-generator"
+import { generateAnalysis, type AnalysisResult } from "@/lib/analysis-generator"
+import { analyzeVideo, type AnalysisProgress } from "@/lib/video-analyzer"
 
-type AnalysisStatus = "idle" | "analyzing" | "complete"
+type AnalysisStatus = "idle" | "extracting" | "analyzing" | "complete"
 
 export default function Home() {
   const [analysisStatus, setAnalysisStatus] = useState<AnalysisStatus>("idle")
   const [currentFileName, setCurrentFileName] = useState<string>("")
+  const [analysisProgress, setAnalysisProgress] = useState<AnalysisProgress | null>(null)
+  const [analysisResults, setAnalysisResults] = useState<AnalysisResult | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
-  const handleAnalysisStart = (fileName: string) => {
+  const handleAnalysisStart = async (blob: Blob, duration: number, fileName: string) => {
     setCurrentFileName(fileName)
-    setAnalysisStatus("analyzing")
-    // Simulate analysis process
-    setTimeout(() => {
+    setError(null)
+    setAnalysisResults(null)
+
+    // Use real CV analysis
+    try {
+      setAnalysisStatus("extracting")
+      
+      const results = await analyzeVideo(blob, duration, (progress) => {
+        setAnalysisProgress(progress)
+        if (progress.stage === 'extracting') {
+          setAnalysisStatus("extracting")
+        } else if (progress.stage === 'detecting' || progress.stage === 'scoring') {
+          setAnalysisStatus("analyzing")
+        }
+      })
+      
+      console.log('✅ Real CV analysis completed:', results)
+      setAnalysisResults(results)
       setAnalysisStatus("complete")
-    }, 5000)
+    } catch (err) {
+      console.error('❌ Real CV analysis failed:', err)
+      setError(`CV Analysis failed: ${err instanceof Error ? err.message : 'Unknown error'}`)
+      setAnalysisStatus("idle")
+    }
   }
 
   return (
@@ -31,6 +54,29 @@ export default function Home() {
 
           <VideoUpload onAnalysisStart={handleAnalysisStart} />
 
+          {error && (
+            <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-700 text-center">{error}</p>
+            </div>
+          )}
+
+          {(analysisStatus === "extracting" || analysisStatus === "analyzing") && analysisProgress && (
+            <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-blue-700 text-center mb-2">
+                {analysisProgress.message}
+              </p>
+              <div className="w-full bg-blue-200 rounded-full h-2">
+                <div 
+                  className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${analysisProgress.progress}%` }}
+                />
+              </div>
+              <p className="text-blue-600 text-sm text-center mt-2">
+                {Math.round(analysisProgress.progress)}% complete
+              </p>
+            </div>
+          )}
+
           {analysisStatus === "idle" && (
             <div className="text-center mt-8 pt-6 border-t border-gray-100">
               <h2 className="text-xl font-semibold text-blue-900 mb-3">Welcome, Chure Founding Vendor!</h2>
@@ -42,7 +88,12 @@ export default function Home() {
           )}
 
           {(analysisStatus === "analyzing" || analysisStatus === "complete") && (
-            <ResultsDisplay status={analysisStatus} fileName={currentFileName} generateAnalysis={generateAnalysis} />
+            <ResultsDisplay 
+              status={analysisStatus === "analyzing" ? "analyzing" : "complete"} 
+              fileName={currentFileName} 
+              generateAnalysis={generateAnalysis}
+              realResults={analysisResults}
+            />
           )}
         </div>
       </div>

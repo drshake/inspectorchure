@@ -1,10 +1,10 @@
-type Finding = {
+export type Finding = {
   type: "critical" | "moderate"
   message: string
   timestamp: string // Timestamp in format MM:SS
 }
 
-type AnalysisResult = {
+export type AnalysisResult = {
   score: number
   protectionMeasures: {
     protectiveGloves: number
@@ -21,6 +21,15 @@ type AnalysisResult = {
   keyFindings: Finding[]
   improvements: string[]
   analyzedAt: string // Date and time of analysis
+  detectionMetadata?: {
+    // Track what was actually detected to distinguish 0% from "Not Assessed"
+    glovesDetected: boolean
+    bareHandsDetected: boolean
+    hairNetDetected: boolean
+    surfaceDetected: boolean
+    equipmentDetected: boolean
+    foodDetected: boolean
+  }
 }
 
 const possibleFindings = {

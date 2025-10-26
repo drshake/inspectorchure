@@ -28,6 +28,14 @@ interface AnalysisResult {
   }>
   improvements: string[]
   analyzedAt: string
+  detectionMetadata?: {
+    glovesDetected: boolean
+    bareHandsDetected: boolean
+    hairNetDetected: boolean
+    surfaceDetected: boolean
+    equipmentDetected: boolean
+    foodDetected: boolean
+  }
 }
 
 // Update the props to include fileName and generateAnalysis
@@ -35,9 +43,10 @@ interface ResultsDisplayProps {
   status: AnalysisStatus
   fileName: string
   generateAnalysis: (fileName: string) => AnalysisResult
+  realResults?: AnalysisResult | null
 }
 
-export default function ResultsDisplay({ status, fileName, generateAnalysis }: ResultsDisplayProps) {
+export default function ResultsDisplay({ status, fileName, generateAnalysis, realResults }: ResultsDisplayProps) {
   const [progress, setProgress] = useState(0)
   const [results, setResults] = useState<AnalysisResult | null>(null)
   const reportRef = useRef<HTMLDivElement>(null)
@@ -60,11 +69,15 @@ export default function ResultsDisplay({ status, fileName, generateAnalysis }: R
 
   useEffect(() => {
     if (status === "complete") {
-      // Generate unique analysis results based on the filename
-      const analysisResults = generateAnalysis(fileName)
-      setResults(analysisResults)
+      // Use real results if provided, otherwise generate synthetic
+      if (realResults) {
+        setResults(realResults)
+      } else {
+        const analysisResults = generateAnalysis(fileName)
+        setResults(analysisResults)
+      }
     }
-  }, [status, fileName, generateAnalysis])
+  }, [status, fileName, generateAnalysis, realResults])
 
   const getScoreStatus = (score: number) => {
     if (score >= 91) return { label: "Excellent", color: "bg-green-100", textColor: "text-green-800" }
@@ -105,12 +118,36 @@ export default function ResultsDisplay({ status, fileName, generateAnalysis }: R
   const scoreStatus = getScoreStatus(results.score)
   const scoreCircleColor = getScoreCircleColor(results.score)
 
-  const MetricRow = ({ label, value }: { label: string; value: number }) => (
-    <div className="flex items-center justify-between py-3 px-4 bg-gray-50 rounded">
-      <span className="text-blue-900">{label}</span>
-      <span className="font-medium text-blue-900">{value.toFixed(1)}%</span>
-    </div>
-  )
+  const MetricRow = ({ label, value, notDetected, category }: { label: string; value: number; notDetected?: boolean; category?: string }) => {
+    // Show contextual message when not detected
+    let displayValue = `${value.toFixed(1)}%`
+    
+    if (notDetected) {
+      // Provide specific context based on category
+      switch (category) {
+        case 'gloves':
+          displayValue = 'No gloves detected'
+          break
+        case 'equipment':
+          displayValue = 'No equipment visible'
+          break
+        case 'food':
+          displayValue = 'No food in video'
+          break
+        default:
+          displayValue = 'Not detected in video'
+      }
+    }
+    
+    const textColor = notDetected ? 'text-gray-500 text-sm' : 'font-medium text-blue-900'
+    
+    return (
+      <div className="flex items-center justify-between py-3 px-4 bg-gray-50 rounded">
+        <span className="text-blue-900">{label}</span>
+        <span className={textColor}>{displayValue}</span>
+      </div>
+    )
+  }
 
   return (
     <div className="bg-white space-y-8 mt-8 relative pb-16">
@@ -159,16 +196,36 @@ export default function ResultsDisplay({ status, fileName, generateAnalysis }: R
         <section>
           <h3 className="text-blue-500 font-medium mb-3">Protection Measures</h3>
           <div className="space-y-2">
-            <MetricRow label="Protective Gloves" value={results.protectionMeasures.protectiveGloves} />
-            <MetricRow label="Safety Equipment" value={results.protectionMeasures.safetyEquipment} />
+            <MetricRow 
+              label="Protective Gloves" 
+              value={results.protectionMeasures.protectiveGloves}
+              notDetected={!results.detectionMetadata?.glovesDetected && results.protectionMeasures.protectiveGloves === 0}
+              category="gloves"
+            />
+            <MetricRow 
+              label="Safety Equipment" 
+              value={results.protectionMeasures.safetyEquipment}
+              notDetected={!results.detectionMetadata?.equipmentDetected && results.protectionMeasures.safetyEquipment === 0}
+              category="equipment"
+            />
           </div>
         </section>
 
         <section>
           <h3 className="text-blue-500 font-medium mb-3">Food Handling</h3>
           <div className="space-y-2">
-            <MetricRow label="Cutting Board Usage" value={results.foodHandling.cuttingBoardUsage} />
-            <MetricRow label="Raw Food Safety" value={results.foodHandling.rawFoodSafety} />
+            <MetricRow 
+              label="Cutting Board Usage" 
+              value={results.foodHandling.cuttingBoardUsage}
+              notDetected={!results.detectionMetadata?.equipmentDetected && results.foodHandling.cuttingBoardUsage === 0}
+              category="equipment"
+            />
+            <MetricRow 
+              label="Raw Food Safety" 
+              value={results.foodHandling.rawFoodSafety}
+              notDetected={!results.detectionMetadata?.foodDetected && results.foodHandling.rawFoodSafety >= 90}
+              category="food"
+            />
           </div>
         </section>
 

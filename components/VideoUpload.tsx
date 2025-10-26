@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 export default function VideoUpload({
   onAnalysisStart,
 }: {
-  onAnalysisStart: (fileName: string) => void
+  onAnalysisStart: (blob: Blob, duration: number, fileName: string) => void
 }) {
   const [isRecording, setIsRecording] = useState(false)
   const [recordedVideo, setRecordedVideo] = useState<Blob | null>(null)
@@ -132,13 +132,48 @@ export default function VideoUpload({
     if (!recordedVideo) return
 
     setUploading(true)
-    await new Promise((resolve) => setTimeout(resolve, 2000))
+    
+    // MIME type validation
+    if (!recordedVideo.type.startsWith('video/')) {
+      setError('Invalid file type. Please upload a video file.')
+      setUploading(false)
+      setRecordedVideo(null)
+      return
+    }
+    
+    // Basic video validation
+    const minDuration = 5 // 5 seconds minimum
+    const maxDuration = 300 // 5 minutes maximum
+    const maxSize = 100 * 1024 * 1024 // 100 MB
+    
+    // Validate duration
+    if (recordingTime < minDuration) {
+      setError(`Video too short. Please record at least ${minDuration} seconds.`)
+      setUploading(false)
+      setRecordedVideo(null)
+      return
+    }
+    
+    if (recordingTime > maxDuration) {
+      setError(`Video too long. Maximum duration is ${Math.floor(maxDuration / 60)} minutes.`)
+      setUploading(false)
+      setRecordedVideo(null)
+      return
+    }
+    
+    // Validate size
+    if (recordedVideo.size > maxSize) {
+      setError(`Video file too large. Maximum size is ${maxSize / (1024 * 1024)} MB.`)
+      setUploading(false)
+      setRecordedVideo(null)
+      return
+    }
 
     const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, "-")
     const fileName = `recorded-video-${timestamp}-${recordingTime}s.webm`
 
     setUploading(false)
-    onAnalysisStart(fileName)
+    onAnalysisStart(recordedVideo, recordingTime, fileName)
 
     setRecordedVideo(null)
     setRecordingTime(0)
