@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react"
 import Image from "next/image"
-import { use } from "react"
 
 interface ReportData {
   vendorId: string
@@ -20,8 +19,8 @@ interface ReportData {
   improvementSuggestions: string[]
 }
 
-export default function VendorReportPage({ params }: { params: Promise<{ vendorId: string }> }) {
-  const resolvedParams = use(params)
+export default function VendorReportPage({ params }: { params: { vendorId: string } }) {
+  const resolvedParams = params
   const [report, setReport] = useState<ReportData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
