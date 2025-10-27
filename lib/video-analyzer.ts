@@ -109,7 +109,7 @@ export async function analyzeVideo(
       },
       bacterialRisk: 100 - scoringResult.overallScore, // Inverse of overall score
       keyFindings: convertFindings(scoringResult.findings),
-      improvements: generateSuggestions(scoringResult.findings),
+      improvements: generateSuggestions(scoringResult.findings, scoringResult.individualScores),
       analyzedAt: new Date().toISOString(),
       detectionMetadata: {
         glovesDetected: mappedDetections.protectiveGloves.detectedFrames.length > 0,

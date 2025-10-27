@@ -171,7 +171,7 @@ export function calculateScores(
   console.log(`  Overall Score: ${Math.round(overallScore)}%`)
 
   // Generate summary
-  const summary = generateSummary(overallScore, findings.length)
+  const summary = generateSummary(overallScore, findings, individualScores)
 
   return {
     overallScore: Math.round(overallScore),
@@ -182,38 +182,105 @@ export function calculateScores(
 }
 
 /**
- * Generate human-readable summary
+ * Generate human-readable summary based on actual detections
  */
-function generateSummary(score: number, findingsCount: number): string {
+function generateSummary(score: number, findings: Finding[], scores: HygieneScore[]): string {
+  const criticalFindings = findings.filter(f => f.severity === 'critical')
+  const majorFindings = findings.filter(f => f.severity === 'major')
+  
+  // Get specific problem areas
+  const lowScores = scores.filter(s => s.score < 70)
+  const highScores = scores.filter(s => s.score >= 85)
+  
   if (score >= 90) {
-    return 'Excellent hygiene practices observed throughout the video.'
+    if (highScores.length > 0) {
+      const strengths = highScores.map(s => s.category.toLowerCase()).slice(0, 2).join(' and ')
+      return `Outstanding work! Your ${strengths} practices are exemplary. Keep maintaining these high standards.`
+    }
+    return 'Excellent hygiene practices observed throughout your food preparation. You\'re setting a great example!'
   } else if (score >= 80) {
-    return 'Good hygiene practices with minor areas for improvement.'
+    if (lowScores.length > 0) {
+      const areas = lowScores.map(s => s.category.toLowerCase()).slice(0, 2).join(' and ')
+      return `Good overall performance! Focus on improving your ${areas} to achieve excellence.`
+    }
+    return 'Solid hygiene practices with just a few minor areas to refine. You\'re doing well overall.'
   } else if (score >= 70) {
-    return 'Acceptable hygiene with several violations requiring attention.'
+    if (criticalFindings.length > 0) {
+      const issues = criticalFindings.map(f => f.category.toLowerCase()).slice(0, 2).join(' and ')
+      return `Your ${issues} need immediate attention. Address these critical areas to meet safety standards.`
+    }
+    return 'Acceptable baseline hygiene, but several practices need improvement to ensure consistent food safety.'
   } else if (score >= 60) {
-    return 'Below standard hygiene practices detected. Immediate corrective action recommended.'
+    const problemAreas = lowScores.map(s => s.category.toLowerCase()).slice(0, 3)
+    const areasList = problemAreas.length > 1 
+      ? problemAreas.slice(0, -1).join(', ') + ' and ' + problemAreas[problemAreas.length - 1]
+      : problemAreas[0]
+    return `Your ${areasList} practices are below standard. Immediate corrective action is needed to ensure customer safety.`
   } else {
-    return 'Critical hygiene violations detected. Comprehensive training and protocol review required.'
+    return `Critical hygiene violations detected across multiple areas. A comprehensive review of your food safety protocols and immediate staff training is required.`
   }
 }
 
 /**
- * Generate improvement suggestions based on findings
+ * Generate personalized improvement suggestions based on findings
  */
-export function generateSuggestions(findings: Finding[]): string[] {
+export function generateSuggestions(findings: Finding[], scores: HygieneScore[]): string[] {
   const suggestions: string[] = []
+  const categories = new Set<string>()
 
+  // Add suggestions based on critical and major findings
   findings.forEach((finding) => {
-    if (finding.category === 'Protective Gloves') {
-      suggestions.push('Ensure all food handlers wear disposable gloves when handling ready-to-eat foods')
-    } else if (finding.category === 'Hand Hygiene') {
-      suggestions.push('Implement strict hand-washing protocols and eliminate direct hand contact with food')
-    } else if (finding.category === 'Hair Covering') {
-      suggestions.push('Require all staff to wear proper hair nets or chef hats during food preparation')
+    if (!categories.has(finding.category)) {
+      categories.add(finding.category)
+      
+      if (finding.category === 'Protective Gloves') {
+        if (finding.severity === 'critical') {
+          suggestions.push('🧤 You need to wear gloves consistently throughout food preparation. Keep them within reach so you remember to use them.')
+        } else {
+          suggestions.push('🧤 Try to maintain glove usage more consistently - they should be on whenever you\'re handling food.')
+        }
+      } else if (finding.category === 'Hand Hygiene') {
+        if (finding.severity === 'critical') {
+          suggestions.push('🚿 Avoid touching food with bare hands. Always use gloves or utensils when handling ready-to-eat items.')
+        } else {
+          suggestions.push('🚿 Remember to wash your hands thoroughly before and after handling different types of food.')
+        }
+      } else if (finding.category === 'Hair Covering') {
+        if (finding.severity === 'critical') {
+          suggestions.push('👤 Make sure to wear a hair net or hat before you start cooking - it should cover all your hair completely.')
+        } else {
+          suggestions.push('👤 Check that your hair covering is secure and covers all your hair during food prep.')
+        }
+      }
     }
   })
 
-  // Remove duplicates
-  return [...new Set(suggestions)]
+  // Add suggestions for low-scoring categories (even without findings)
+  scores.forEach((score) => {
+    if (score.score < 70 && !categories.has(score.category)) {
+      categories.add(score.category)
+      
+      if (score.category.includes('Glove')) {
+        suggestions.push('🧤 Your glove usage was inconsistent in this video. Try to put them on at the start and keep them on throughout.')
+      } else if (score.category.includes('Hygiene')) {
+        suggestions.push('🚿 Your hand hygiene needs attention. Make handwashing a habit at every stage of food preparation.')
+      } else if (score.category.includes('Hair')) {
+        suggestions.push('👤 Hair covering wasn\'t consistently worn. Make it your first step before starting any food prep.')
+      } else if (score.category.includes('Surface')) {
+        suggestions.push('🧽 Clean and sanitize your work surfaces more frequently, especially when switching between different foods.')
+      } else if (score.category.includes('Equipment')) {
+        suggestions.push('🔪 Make sure you\'re using proper food-grade equipment and sanitizing cutting boards between uses.')
+      } else if (score.category.includes('Contamination')) {
+        suggestions.push('⚠️ Be mindful of cross-contamination - use separate areas and tools when handling different food types.')
+      }
+    }
+  })
+
+  // Add encouraging message if doing well
+  if (suggestions.length === 0) {
+    suggestions.push('✅ Excellent work! You\'re following proper food safety protocols. Keep up these great habits!')
+    suggestions.push('📋 Consider doing regular video self-checks to maintain this high standard consistently.')
+  }
+
+  return suggestions
 }
