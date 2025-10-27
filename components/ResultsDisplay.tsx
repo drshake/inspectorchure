@@ -38,15 +38,14 @@ interface AnalysisResult {
   }
 }
 
-// Update the props to include fileName and generateAnalysis
+// Update the props to include fileName
 interface ResultsDisplayProps {
   status: AnalysisStatus
   fileName: string
-  generateAnalysis: (fileName: string) => AnalysisResult
   realResults?: AnalysisResult | null
 }
 
-export default function ResultsDisplay({ status, fileName, generateAnalysis, realResults }: ResultsDisplayProps) {
+export default function ResultsDisplay({ status, fileName, realResults }: ResultsDisplayProps) {
   const [progress, setProgress] = useState(0)
   const [results, setResults] = useState<AnalysisResult | null>(null)
   const reportRef = useRef<HTMLDivElement>(null)
@@ -69,15 +68,16 @@ export default function ResultsDisplay({ status, fileName, generateAnalysis, rea
 
   useEffect(() => {
     if (status === "complete") {
-      // Use real results if provided, otherwise generate synthetic
+      // Only use real CV analysis results
       if (realResults) {
+        console.log('✅ Using REAL CV analysis results')
         setResults(realResults)
       } else {
-        const analysisResults = generateAnalysis(fileName)
-        setResults(analysisResults)
+        console.error('❌ No real results available - this should not happen!')
+        setResults(null)
       }
     }
-  }, [status, fileName, generateAnalysis, realResults])
+  }, [status, realResults])
 
   const getScoreStatus = (score: number) => {
     if (score >= 91) return { label: "Excellent", color: "bg-green-100", textColor: "text-green-800" }

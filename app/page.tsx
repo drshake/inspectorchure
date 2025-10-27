@@ -3,8 +3,8 @@
 import { useState } from "react"
 import VideoUpload from "@/components/VideoUpload"
 import ResultsDisplay from "@/components/ResultsDisplay"
-import { generateAnalysis, type AnalysisResult } from "@/lib/analysis-generator"
 import { analyzeVideo, type AnalysisProgress } from "@/lib/video-analyzer"
+import type { AnalysisResult } from "@/lib/analysis-generator"
 
 type AnalysisStatus = "idle" | "extracting" | "analyzing" | "complete"
 
@@ -91,7 +91,6 @@ export default function Home() {
             <ResultsDisplay 
               status={analysisStatus === "analyzing" ? "analyzing" : "complete"} 
               fileName={currentFileName} 
-              generateAnalysis={generateAnalysis}
               realResults={analysisResults}
             />
           )}
