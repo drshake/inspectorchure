@@ -7,7 +7,7 @@
  * 4. Scoring
  */
 
-import { extractFrames, calculateFrameBrightness, type ExtractionProgress } from './frame-extractor'
+import { extractFrames, getVideoDuration, calculateFrameBrightness, type ExtractionProgress } from './frame-extractor'
 import { detectLabelsBatch, type CVBatchResult } from './cv-service'
 import { mapDetections } from './detection-mapper'
 import { calculateScores, generateSuggestions, type ScoringResult } from './scoring-engine'
@@ -22,23 +22,35 @@ export interface AnalysisProgress {
 /**
  * Analyze a video for hygiene compliance
  * @param videoBlob - The recorded video Blob
- * @param duration - Video duration in seconds
+ * @param estimatedDuration - Estimated video duration in seconds (from recording timer)
  * @param onProgress - Optional progress callback
  * @returns Complete analysis result matching AnalysisResult interface
  */
 export async function analyzeVideo(
   videoBlob: Blob,
-  duration: number,
+  estimatedDuration: number,
   onProgress?: (progress: AnalysisProgress) => void
 ): Promise<AnalysisResult> {
   try {
-    // Stage 1: Extract frames
-    onProgress?.({ stage: 'extracting', progress: 0, message: 'Extracting frames from video...' })
+    // Get actual video duration from metadata (more reliable on mobile)
+    onProgress?.({ stage: 'extracting', progress: 0, message: 'Loading video...' })
     
-    const extractionResult = await extractFrames(videoBlob, duration, (extraction: ExtractionProgress) => {
+    let actualDuration: number
+    try {
+      actualDuration = await getVideoDuration(videoBlob)
+      console.log(`📹 Video duration: ${actualDuration}s (estimated: ${estimatedDuration}s)`)
+    } catch (error) {
+      console.warn('Failed to get video duration from metadata, using estimated duration')
+      actualDuration = estimatedDuration
+    }
+    
+    // Stage 1: Extract frames
+    onProgress?.({ stage: 'extracting', progress: 5, message: 'Extracting frames from video...' })
+    
+    const extractionResult = await extractFrames(videoBlob, actualDuration, (extraction: ExtractionProgress) => {
       onProgress?.({
         stage: 'extracting',
-        progress: extraction.percentComplete * 0.3, // 0-30%
+        progress: 5 + (extraction.percentComplete * 0.25), // 5-30%
         message: `Extracting frame ${extraction.currentFrame} of ${extraction.totalFrames}...`,
       })
     })

@@ -3,6 +3,41 @@
  * Extracts frames from video Blob at 1 frame per second for CV analysis
  */
 
+/**
+ * Get actual duration from video blob (more reliable than recording timer)
+ */
+export async function getVideoDuration(blob: Blob): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const video = document.createElement('video')
+    video.preload = 'metadata'
+    video.muted = true
+    video.playsInline = true
+    
+    const timeout = setTimeout(() => {
+      URL.revokeObjectURL(video.src)
+      video.remove()
+      reject(new Error('Timeout loading video duration'))
+    }, 10000)
+    
+    video.onloadedmetadata = () => {
+      clearTimeout(timeout)
+      const duration = Math.floor(video.duration)
+      URL.revokeObjectURL(video.src)
+      video.remove()
+      resolve(duration)
+    }
+    
+    video.onerror = () => {
+      clearTimeout(timeout)
+      URL.revokeObjectURL(video.src)
+      video.remove()
+      reject(new Error('Failed to load video'))
+    }
+    
+    video.src = URL.createObjectURL(blob)
+  })
+}
+
 export interface ExtractedFrame {
   frameNumber: number
   timestamp: number // seconds from video start
@@ -43,6 +78,7 @@ export async function extractFrames(
     video.preload = 'metadata'
     video.muted = true
     video.playsInline = true
+    video.crossOrigin = 'anonymous' // Allow canvas to read video
 
     // Create canvas for frame extraction
     const canvas = document.createElement('canvas')
@@ -61,13 +97,42 @@ export async function extractFrames(
     let currentFrameIndex = 0
     const totalFrames = Math.floor(duration) // 1 frame per second
 
+    // Add timeout for metadata loading
+    const metadataTimeout = setTimeout(() => {
+      URL.revokeObjectURL(videoUrl)
+      video.remove()
+      canvas.remove()
+      reject(new Error('Video metadata loading timed out. Try recording again.'))
+    }, 10000) // 10 second timeout
+
     video.onloadedmetadata = () => {
+      clearTimeout(metadataTimeout)
+      
+      // Ensure video dimensions are valid
+      if (!video.videoWidth || !video.videoHeight) {
+        URL.revokeObjectURL(videoUrl)
+        video.remove()
+        canvas.remove()
+        reject(new Error('Invalid video dimensions. Please try recording again.'))
+        return
+      }
+
       // Set canvas size to match video
       canvas.width = video.videoWidth
       canvas.height = video.videoHeight
 
+      console.log(`📹 Video loaded: ${video.videoWidth}x${video.videoHeight}, duration: ${duration}s`)
+
       // Start extracting frames
       extractNextFrame()
+    }
+
+    video.onerror = (e) => {
+      clearTimeout(metadataTimeout)
+      URL.revokeObjectURL(videoUrl)
+      video.remove()
+      canvas.remove()
+      reject(new Error('Failed to load video. Please try recording again.'))
     }
 
     function extractNextFrame() {
