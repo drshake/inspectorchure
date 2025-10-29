@@ -38,7 +38,12 @@ export default function Home() {
       setAnalysisStatus("complete")
     } catch (err) {
       console.error('❌ Real CV analysis failed:', err)
-      setError(`CV Analysis failed: ${err instanceof Error ? err.message : 'Unknown error'}`)
+      // Capture full error details for debugging
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+      const errorStack = err instanceof Error ? err.stack : ''
+      const fullError = `${errorMessage}\n\nStack trace:\n${errorStack}`
+      
+      setError(fullError)
       setAnalysisStatus("idle")
     }
   }
@@ -55,8 +60,20 @@ export default function Home() {
           <VideoUpload onAnalysisStart={handleAnalysisStart} />
 
           {error && (
-            <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-red-700 text-center">{error}</p>
+            <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg max-h-96 overflow-y-auto">
+              <h3 className="text-red-900 font-semibold mb-2">Error Details:</h3>
+              <pre className="text-red-700 text-xs whitespace-pre-wrap break-words font-mono">
+                {error}
+              </pre>
+              <button 
+                onClick={() => {
+                  navigator.clipboard.writeText(error)
+                  alert('Error copied to clipboard!')
+                }}
+                className="mt-3 px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700"
+              >
+                Copy Error
+              </button>
             </div>
           )}
 
