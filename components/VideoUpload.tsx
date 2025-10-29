@@ -68,7 +68,27 @@ export default function VideoUpload({
     if (!streamRef.current) return
 
     try {
-      const mediaRecorder = new MediaRecorder(streamRef.current)
+      // Determine best supported video format for this browser
+      // iOS Safari requires MP4, others can use WebM
+      let mimeType = 'video/webm;codecs=vp8,opus'
+      let blobType = 'video/webm'
+      
+      if (MediaRecorder.isTypeSupported('video/mp4')) {
+        mimeType = 'video/mp4'
+        blobType = 'video/mp4'
+      } else if (MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus')) {
+        mimeType = 'video/webm;codecs=vp9,opus'
+      } else if (MediaRecorder.isTypeSupported('video/webm;codecs=vp8,opus')) {
+        mimeType = 'video/webm;codecs=vp8,opus'
+      } else if (MediaRecorder.isTypeSupported('video/webm')) {
+        mimeType = 'video/webm'
+      }
+      
+      console.log('Using video format:', mimeType)
+      
+      const mediaRecorder = new MediaRecorder(streamRef.current, {
+        mimeType: mimeType
+      })
       mediaRecorderRef.current = mediaRecorder
       chunksRef.current = []
 
@@ -79,7 +99,7 @@ export default function VideoUpload({
       }
 
       mediaRecorder.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: "video/webm" })
+        const blob = new Blob(chunksRef.current, { type: blobType })
         setRecordedVideo(blob)
         setShowCamera(false)
 

@@ -56,7 +56,8 @@ export async function getVideoDuration(blob: Blob): Promise<number> {
         clearTimeout(timeout)
         cleanup()
         console.error('Video loading error:', e)
-        reject(new Error('Failed to load video metadata'))
+        console.error('Video blob type:', blob.type, 'size:', blob.size)
+        reject(new Error(`Failed to load video. Format: ${blob.type}. Your browser may not support this video format.`))
       }
     }
     
