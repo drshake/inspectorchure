@@ -40,8 +40,19 @@ export async function analyzeVideo(
       actualDuration = await getVideoDuration(videoBlob)
       console.log(`📹 Video duration: ${actualDuration}s (estimated: ${estimatedDuration}s)`)
     } catch (error) {
-      console.warn('Failed to get video duration from metadata, using estimated duration')
+      console.warn('Failed to get video duration from metadata:', error)
+      // Fall back to estimated duration if metadata loading fails
       actualDuration = estimatedDuration
+      console.log(`⚠️ Using estimated duration: ${actualDuration}s`)
+    }
+    
+    // Validate duration
+    if (actualDuration < 5) {
+      throw new Error('Video too short. Please record at least 5 seconds.')
+    }
+    
+    if (actualDuration > 300) {
+      throw new Error('Video too long. Maximum duration is 5 minutes.')
     }
     
     // Stage 1: Extract frames
