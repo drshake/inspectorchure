@@ -235,21 +235,21 @@ export function generateSuggestions(findings: Finding[], scores: HygieneScore[])
       
       if (finding.category === 'Protective Gloves') {
         if (finding.severity === 'critical') {
-          suggestions.push('Wear gloves consistently throughout food preparation. Keep them within easy reach so you remember to use them 🧤')
+          suggestions.push('Wear gloves consistently throughout food preparation. Keep them within easy reach so you remember to use them.')
         } else {
-          suggestions.push('Maintain glove usage more consistently - they should be on whenever you\'re handling food 🧤')
+          suggestions.push('Maintain glove usage more consistently - they should be on whenever you\'re handling food.')
         }
       } else if (finding.category === 'Hand Hygiene') {
         if (finding.severity === 'critical') {
-          suggestions.push('Avoid touching food with bare hands. Always use gloves or utensils when handling ready-to-eat items')
+          suggestions.push('Avoid touching food with bare hands. Always use gloves or utensils when handling ready-to-eat items.')
         } else {
-          suggestions.push('Wash your hands thoroughly before and after handling different types of food')
+          suggestions.push('Wash your hands thoroughly before and after handling different types of food.')
         }
       } else if (finding.category === 'Hair Covering') {
         if (finding.severity === 'critical') {
-          suggestions.push('Wear a hair net or hat before you start cooking - it should cover all your hair completely')
+          suggestions.push('Wear a hair net or hat before you start cooking - it should cover all your hair completely.')
         } else {
-          suggestions.push('Make sure your hair covering is secure and covers all your hair during food prep')
+          suggestions.push('Make sure your hair covering is secure and covers all your hair during food prep.')
         }
       }
     }
@@ -261,17 +261,17 @@ export function generateSuggestions(findings: Finding[], scores: HygieneScore[])
       categories.add(score.category)
       
       if (score.category.includes('Glove')) {
-        suggestions.push('Your glove usage was inconsistent in this video. Try putting them on at the start and keeping them on throughout 🧤')
+        suggestions.push('Your glove usage was inconsistent in this video. Try putting them on at the start and keeping them on throughout.')
       } else if (score.category.includes('Hygiene')) {
-        suggestions.push('Your hand hygiene needs attention. Make handwashing a habit at every stage of food preparation')
+        suggestions.push('Your hand hygiene needs attention. Make handwashing a habit at every stage of food preparation.')
       } else if (score.category.includes('Hair')) {
-        suggestions.push('Hair covering wasn\'t consistently worn. Make it your first step before starting any food prep')
+        suggestions.push('Hair covering wasn\'t consistently worn. Make it your first step before starting any food prep.')
       } else if (score.category.includes('Surface')) {
-        suggestions.push('Clean and sanitize your work surfaces more frequently, especially when switching between different foods 🧽')
+        suggestions.push('Clean and sanitize your work surfaces more frequently, especially when switching between different foods.')
       } else if (score.category.includes('Equipment')) {
-        suggestions.push('Use proper food-grade equipment and sanitize cutting boards between uses 🔪')
+        suggestions.push('Use proper food-grade equipment and sanitize cutting boards between uses.')
       } else if (score.category.includes('Contamination')) {
-        suggestions.push('Be mindful of cross-contamination - use separate areas and tools when handling different food types')
+        suggestions.push('Be mindful of cross-contamination - use separate areas and tools when handling different food types.')
       }
     }
   })

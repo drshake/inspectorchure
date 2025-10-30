@@ -109,7 +109,7 @@ export default function ResultsDisplay({ status, fileName, realResults }: Result
     setIsSharing(true)
 
     try {
-      const shareText = `My Food Safety Hygiene Score: ${results.score}% 🎯\n\nI am Churred - Setting the new global food safety standard! 🍽️✨`
+      const shareText = `My Food Safety Hygiene Score: ${results.score}%\n\nI am Churred - Setting the new global food safety standard.`
       
       // Try native share API first (works on mobile)
       if (navigator.share) {
@@ -548,10 +548,7 @@ export default function ResultsDisplay({ status, fileName, realResults }: Result
               />
             </svg>
             <div className="absolute inset-0 flex items-center justify-center">
-              <div className="flex items-center">
-                <span className="text-2xl font-bold text-blue-900">{results.score}</span>
-                <span className="text-xl font-bold text-blue-900">%</span>
-              </div>
+              <span className="text-3xl font-bold text-blue-900">{results.score}%</span>
             </div>
           </div>
           <div className={`inline-block px-3 py-1 ${scoreStatus.color} rounded-full`}>
