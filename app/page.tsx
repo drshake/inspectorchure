@@ -4,7 +4,7 @@ import { useState } from "react"
 import VideoUpload from "@/components/VideoUpload"
 import ResultsDisplay from "@/components/ResultsDisplay"
 import { analyzeVideo, type AnalysisProgress } from "@/lib/video-analyzer"
-import type { AnalysisResult } from "@/lib/analysis-generator"
+import type { AnalysisResult } from "@/lib/types"
 
 type AnalysisStatus = "idle" | "extracting" | "analyzing" | "complete"
 

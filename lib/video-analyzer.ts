@@ -11,7 +11,7 @@ import { extractFrames, getVideoDuration, calculateFrameBrightness, type Extract
 import { detectLabelsBatch, type CVBatchResult } from './cv-service'
 import { mapDetections } from './detection-mapper'
 import { calculateScores, generateSuggestions, type ScoringResult } from './scoring-engine'
-import type { AnalysisResult, Finding } from './analysis-generator'
+import type { AnalysisResult, Finding } from './types'
 
 export interface AnalysisProgress {
   stage: 'extracting' | 'detecting' | 'scoring'
