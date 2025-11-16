@@ -1,29 +1,13 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter } from 'next/navigation'
+import { useRouter } from "next/navigation"
 import VideoUpload from "@/components/VideoUpload"
 import ResultsDisplay from "@/components/ResultsDisplay"
-import AuthCard from "@/components/AuthCard"
-import { runAnalysis } from "@/lib/capture-frames"
+import { generateAnalysis } from "@/lib/analysis-generator"
 import { Button } from "@/components/ui/button"
-import { createClient } from "@/lib/supabase/client"
 
 type AnalysisStatus = "idle" | "analyzing" | "complete"
-
-interface VisionAnalysisResult {
-  hygieneScore: number
-  categories: {
-    gloves: number
-    bareHands: number
-    hairNet: number
-    cleanSurfaces: number
-    equipment: number
-    crossContam: number
-  }
-  improvements?: string
-  analysisId?: string
-}
 
 interface Vendor {
   id: string
@@ -35,31 +19,19 @@ interface Vendor {
   is_anonymous: boolean
 }
 
-export default function Home() {
+export default function DashboardPage() {
   const router = useRouter()
   const [vendor, setVendor] = useState<Vendor | null>(null)
-  const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [showPaywall, setShowPaywall] = useState(false)
-  const [showAuthCard, setShowAuthCard] = useState(false)
   const [analysisStatus, setAnalysisStatus] = useState<AnalysisStatus>("idle")
   const [currentFileName, setCurrentFileName] = useState<string>("")
-  const [analysisResults, setAnalysisResults] = useState<VisionAnalysisResult | null>(null)
-  const [trialUsed, setTrialUsed] = useState(false)
 
   useEffect(() => {
     async function initializeSession() {
       try {
-        const supabase = createClient()
-        const { data: { user: authUser } } = await supabase.auth.getUser()
-        setUser(authUser)
-
-        // Check if guest trial has been used
-        const guestTrialUsed = localStorage.getItem("inspectorChureTrialUsed")
-        setTrialUsed(guestTrialUsed === "true")
-
         const response = await fetch("/api/startSession", {
-          method: "GET",
+          method: "POST",
           credentials: "include",
         })
 
@@ -68,18 +40,13 @@ export default function Home() {
         }
 
         const data = await response.json()
-
-        if (!data.ok || !data.vendor) {
-          throw new Error("Invalid session data")
-        }
-
         setVendor(data.vendor)
 
+        const usageLimit = 3
         const hasActiveSubscription =
           data.vendor.subscription_status === "active" || data.vendor.subscription_status === "trialing"
 
-        // Show paywall if authenticated user has used all free attempts
-        if (authUser && data.vendor.usage_count >= 3 && !hasActiveSubscription) {
+        if (data.vendor.usage_count >= usageLimit && !hasActiveSubscription) {
           setShowPaywall(true)
         }
       } catch (error) {
@@ -92,104 +59,18 @@ export default function Home() {
     initializeSession()
   }, [])
 
-  const handleAnalysisStart = async (fileName: string, videoBlob: Blob) => {
-    console.log("[v0] ========== ANALYSIS START ==========")
-    
-    if (!user && trialUsed) {
-      setShowAuthCard(true)
-      return
-    }
-
+  const handleAnalysisStart = (fileName: string) => {
     setCurrentFileName(fileName)
     setAnalysisStatus("analyzing")
-
-    try {
-      const videoEl = document.createElement("video")
-      videoEl.preload = "auto"
-      videoEl.muted = true
-      videoEl.playsInline = true
-      videoEl.style.position = "fixed"
-      videoEl.style.top = "-9999px"
-      videoEl.style.left = "-9999px"
-      document.body.appendChild(videoEl)
-
-      const videoUrl = URL.createObjectURL(videoBlob)
-
-      await new Promise<void>((resolve, reject) => {
-        const timeout = setTimeout(() => {
-          reject(new Error("timeout"))
-        }, 20000)
-
-        let metadataLoaded = false
-        let canPlay = false
-
-        const checkReady = () => {
-          if (metadataLoaded && canPlay) {
-            clearTimeout(timeout)
-            resolve()
-          }
-        }
-
-        videoEl.onloadedmetadata = () => {
-          metadataLoaded = true
-          checkReady()
-        }
-
-        videoEl.oncanplay = () => {
-          canPlay = true
-          checkReady()
-        }
-
-        videoEl.onerror = () => {
-          clearTimeout(timeout)
-          reject(new Error("load_error"))
-        }
-
-        videoEl.src = videoUrl
-        videoEl.load()
-      })
-
-      if (!vendor?.id) {
-        throw new Error("No vendor ID")
-      }
-
-      const analysisResult = await runAnalysis(vendor.id, videoEl)
-
-      setAnalysisResults({
-        hygieneScore: analysisResult.hygieneScore,
-        categories: analysisResult.categories,
-        improvements: analysisResult.improvements,
-        analysisId: analysisResult.analysisId
-      })
-
+    // Simulate analysis process
+    setTimeout(() => {
       setAnalysisStatus("complete")
-
-      if (!user) {
-        localStorage.setItem("lastGuestAnalysisId", analysisResult.analysisId || "")
-        localStorage.setItem("inspectorChureTrialUsed", "true")
-        setTrialUsed(true)
-      }
-
-      URL.revokeObjectURL(videoUrl)
-      document.body.removeChild(videoEl)
-    } catch (error: any) {
-      console.error("[v0] ❌ ANALYSIS FAILED")
-      console.error("[v0] Error:", error)
-      setAnalysisStatus("idle")
-
-      let message = "Unable to analyze video. Please try recording again."
-
-      if (error.message === "timeout") {
-        message = "Video took too long to load. Please try again with a shorter video."
-      } else if (error.message === "load_error") {
-        message = "Cannot play this video format. Please try recording again."
-      }
-
-      alert(`Analysis failed: ${message}`)
-    }
+    }, 5000)
   }
 
   const handleUpgrade = () => {
+    // TODO: Redirect to Stripe checkout or pricing page
+    console.log("Redirect to upgrade page")
     router.push("/pricing")
   }
 
@@ -200,20 +81,6 @@ export default function Home() {
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mb-4"></div>
           <p className="text-gray-600">Loading...</p>
         </div>
-      </main>
-    )
-  }
-
-  if (showAuthCard) {
-    return (
-      <main className="min-h-screen bg-[#F8FAFC] p-4 md:p-8 flex items-center justify-center">
-        <AuthCard
-          onSuccess={() => {
-            setShowAuthCard(false)
-            window.location.reload()
-          }}
-          onCancel={() => setShowAuthCard(false)}
-        />
       </main>
     )
   }
@@ -234,7 +101,7 @@ export default function Home() {
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth={2}
-                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 100-16 4 4 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
                 />
               </svg>
               <h1 className="text-3xl font-bold text-gray-900 mb-3">Free Trial Complete</h1>
@@ -313,34 +180,22 @@ export default function Home() {
           <div className="text-center mb-8">
             <h1 className="text-[32px] font-semibold text-blue-900 mb-2">Food Safety Video Inspector</h1>
             <p className="text-blue-800">Upload your kitchen preparation video for instant hygiene analysis</p>
-            {vendor && user && !vendor.is_anonymous && (
+            {vendor && vendor.is_anonymous && (
               <p className="text-sm text-gray-600 mt-2">
                 Free inspections remaining: <span className="font-semibold">{Math.max(0, 3 - vendor.usage_count)}</span>
               </p>
             )}
           </div>
 
-          <VideoUpload onAnalysisStart={handleAnalysisStart} vendorId={vendor?.id} />
+          <VideoUpload onAnalysisStart={handleAnalysisStart} />
 
-          <div className="mt-6 bg-gradient-to-r from-blue-50 to-blue-100 border-2 border-blue-200 rounded-lg p-6 text-center">
-            <h2 className="text-xl font-bold text-blue-900 mb-2">Welcome, Chure Founding Vendor!</h2>
-            <p className="text-blue-800 leading-relaxed">
-              You are now among the pioneers setting the new global food safety standard, with exclusive early access to
-              hygiene scoring, violation reports, and your pathway to the Churred Safety Badge.
-            </p>
-          </div>
-
-          {!user && trialUsed && analysisStatus === "complete" && (
-            <div className="mt-6 bg-blue-50 border-2 border-blue-300 rounded-lg p-6 text-center">
-              <h3 className="text-lg font-semibold text-blue-900 mb-2">
-                Save this report and continue using InspectorChure.
-              </h3>
-              <Button
-                onClick={() => setShowAuthCard(true)}
-                className="mt-3 bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                Sign in or create account
-              </Button>
+          {analysisStatus === "idle" && (
+            <div className="text-center mt-8 pt-6 border-t border-gray-100">
+              <h2 className="text-xl font-semibold text-blue-900 mb-3">Welcome, Chure Founding Vendor!</h2>
+              <p className="text-blue-800 leading-relaxed">
+                You are now among the pioneers setting the new global food safety standard, with exclusive early access
+                to hygiene scoring, violation reports, and your journey to the Churred Safety Badge.
+              </p>
             </div>
           )}
 
@@ -348,7 +203,7 @@ export default function Home() {
             <ResultsDisplay
               status={analysisStatus}
               fileName={currentFileName}
-              analysisResults={analysisResults}
+              generateAnalysis={generateAnalysis}
               vendor={
                 vendor
                   ? {
