@@ -13,17 +13,19 @@ export default function Home() {
   const [currentFileName, setCurrentFileName] = useState<string>("")
   const [analysisProgress, setAnalysisProgress] = useState<AnalysisProgress | null>(null)
   const [analysisResults, setAnalysisResults] = useState<AnalysisResult | null>(null)
+  const [analysisId, setAnalysisId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const handleAnalysisStart = async (blob: Blob, duration: number, fileName: string) => {
     setCurrentFileName(fileName)
     setError(null)
     setAnalysisResults(null)
+    setAnalysisId(null)
 
     // Use real CV analysis
     try {
       setAnalysisStatus("extracting")
-      
+
       const results = await analyzeVideo(blob, duration, (progress) => {
         setAnalysisProgress(progress)
         if (progress.stage === 'extracting') {
@@ -32,17 +34,42 @@ export default function Home() {
           setAnalysisStatus("analyzing")
         }
       })
-      
+
       console.log('✅ Real CV analysis completed:', results)
       setAnalysisResults(results)
       setAnalysisStatus("complete")
+
+      // Save analysis to database
+      try {
+        const saveResponse = await fetch('/api/saveAnalysis', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            analysisResults: results,
+            videoDuration: duration,
+          }),
+        })
+
+        if (saveResponse.ok) {
+          const saveData = await saveResponse.json()
+          setAnalysisId(saveData.analysisId)
+          console.log('✅ Analysis saved to database with ID:', saveData.analysisId)
+        } else {
+          console.error('⚠️ Failed to save analysis to database:', await saveResponse.text())
+        }
+      } catch (saveErr) {
+        console.error('⚠️ Error saving analysis to database:', saveErr)
+        // Don't fail the whole flow if saving fails
+      }
     } catch (err) {
       console.error('❌ Real CV analysis failed:', err)
       // Capture full error details for debugging
       const errorMessage = err instanceof Error ? err.message : 'Unknown error'
       const errorStack = err instanceof Error ? err.stack : ''
       const fullError = `${errorMessage}\n\nStack trace:\n${errorStack}`
-      
+
       setError(fullError)
       setAnalysisStatus("idle")
     }
@@ -105,10 +132,11 @@ export default function Home() {
           )}
 
           {(analysisStatus === "analyzing" || analysisStatus === "complete") && (
-            <ResultsDisplay 
-              status={analysisStatus === "analyzing" ? "analyzing" : "complete"} 
-              fileName={currentFileName} 
+            <ResultsDisplay
+              status={analysisStatus === "analyzing" ? "analyzing" : "complete"}
+              fileName={currentFileName}
               realResults={analysisResults}
+              analysisId={analysisId}
             />
           )}
         </div>

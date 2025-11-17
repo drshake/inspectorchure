@@ -39,14 +39,15 @@ interface AnalysisResult {
   }
 }
 
-// Update the props to include fileName
+// Update the props to include fileName and analysisId
 interface ResultsDisplayProps {
   status: AnalysisStatus
   fileName: string
   realResults?: AnalysisResult | null
+  analysisId?: string | null
 }
 
-export default function ResultsDisplay({ status, fileName, realResults }: ResultsDisplayProps) {
+export default function ResultsDisplay({ status, fileName, realResults, analysisId }: ResultsDisplayProps) {
   const [progress, setProgress] = useState(0)
   const [results, setResults] = useState<AnalysisResult | null>(null)
   const [isSharing, setIsSharing] = useState(false)
