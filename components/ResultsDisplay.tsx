@@ -5,6 +5,7 @@ import { Progress } from "@/components/ui/progress"
 import { Clock } from "lucide-react"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
+import BadgeDisplay from "@/components/BadgeDisplay"
 
 type AnalysisStatus = "idle" | "analyzing" | "complete"
 
@@ -39,15 +40,16 @@ interface AnalysisResult {
   }
 }
 
-// Update the props to include fileName and analysisId
+// Update the props to include fileName, analysisId, and vendorId
 interface ResultsDisplayProps {
   status: AnalysisStatus
   fileName: string
   realResults?: AnalysisResult | null
   analysisId?: string | null
+  vendorId?: string | null
 }
 
-export default function ResultsDisplay({ status, fileName, realResults, analysisId }: ResultsDisplayProps) {
+export default function ResultsDisplay({ status, fileName, realResults, analysisId, vendorId }: ResultsDisplayProps) {
   const [progress, setProgress] = useState(0)
   const [results, setResults] = useState<AnalysisResult | null>(null)
   const [isSharing, setIsSharing] = useState(false)
@@ -556,6 +558,9 @@ export default function ResultsDisplay({ status, fileName, realResults, analysis
             <span className={`text-sm ${scoreStatus.textColor}`}>{scoreStatus.label}</span>
           </div>
         </div>
+
+        {/* Badge Display */}
+        <BadgeDisplay vendorId={vendorId} score={results.score} />
 
         <section>
           <h3 className="text-blue-500 font-medium mb-3">Protection Measures</h3>

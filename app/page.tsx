@@ -3,6 +3,8 @@
 import { useState } from "react"
 import VideoUpload from "@/components/VideoUpload"
 import ResultsDisplay from "@/components/ResultsDisplay"
+import AuthModal from "@/components/auth/AuthModal"
+import UserMenu from "@/components/auth/UserMenu"
 import { analyzeVideo, type AnalysisProgress } from "@/lib/video-analyzer"
 import type { AnalysisResult } from "@/lib/types"
 
@@ -14,7 +16,9 @@ export default function Home() {
   const [analysisProgress, setAnalysisProgress] = useState<AnalysisProgress | null>(null)
   const [analysisResults, setAnalysisResults] = useState<AnalysisResult | null>(null)
   const [analysisId, setAnalysisId] = useState<string | null>(null)
+  const [vendorId, setVendorId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [showAuthModal, setShowAuthModal] = useState(false)
 
   const handleAnalysisStart = async (blob: Blob, duration: number, fileName: string) => {
     setCurrentFileName(fileName)
@@ -55,7 +59,8 @@ export default function Home() {
         if (saveResponse.ok) {
           const saveData = await saveResponse.json()
           setAnalysisId(saveData.analysisId)
-          console.log('✅ Analysis saved to database with ID:', saveData.analysisId)
+          setVendorId(saveData.vendorId)
+          console.log('✅ Analysis saved to database with ID:', saveData.analysisId, 'Vendor ID:', saveData.vendorId)
         } else {
           console.error('⚠️ Failed to save analysis to database:', await saveResponse.text())
         }
@@ -79,9 +84,15 @@ export default function Home() {
     <main className="min-h-screen bg-[#F8FAFC] p-4 md:p-8">
       <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-sm">
         <div className="px-6 py-8 md:px-8 md:py-10">
-          <div className="text-center mb-8">
-            <h1 className="text-[32px] font-semibold text-blue-900 mb-2">Food Safety Video Inspector</h1>
-            <p className="text-blue-800">Upload your kitchen preparation video for instant hygiene analysis</p>
+          {/* Header with Auth */}
+          <div className="flex justify-between items-center mb-8">
+            <div className="flex-1">
+              <h1 className="text-[32px] font-semibold text-blue-900 mb-2">Food Safety Video Inspector</h1>
+              <p className="text-blue-800">Upload your kitchen preparation video for instant hygiene analysis</p>
+            </div>
+            <div className="ml-4">
+              <UserMenu onSignInClick={() => setShowAuthModal(true)} />
+            </div>
           </div>
 
           <VideoUpload onAnalysisStart={handleAnalysisStart} />
@@ -137,10 +148,21 @@ export default function Home() {
               fileName={currentFileName}
               realResults={analysisResults}
               analysisId={analysisId}
+              vendorId={vendorId}
             />
           )}
         </div>
       </div>
+
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        onSuccess={() => {
+          setShowAuthModal(false)
+          window.location.reload() // Refresh to update user state
+        }}
+      />
     </main>
   )
 }

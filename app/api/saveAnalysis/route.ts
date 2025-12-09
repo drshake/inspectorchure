@@ -40,6 +40,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       analysisId: result.id,
+      vendorId: result.vendorId,
     })
   } catch (error) {
     console.error('Failed to save analysis:', error)
