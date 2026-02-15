@@ -5,7 +5,6 @@ import { Progress } from "@/components/ui/progress"
 import { Clock } from "lucide-react"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
-import BadgeDisplay from "@/components/BadgeDisplay"
 
 type AnalysisStatus = "idle" | "analyzing" | "complete"
 
@@ -625,8 +624,6 @@ export default function ResultsDisplay({ status, fileName, realResults, analysis
           </div>
         </div>
 
-        {/* Badge Display */}
-        <BadgeDisplay vendorId={vendorId} score={results.score} />
 
         <section>
           <h3 className="text-blue-500 font-medium mb-3">Protection Measures</h3>
