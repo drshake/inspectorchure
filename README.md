@@ -52,7 +52,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
 npm run dev
 \`\`\`
 
-Visit http://localhost:3000
+Visit https://inspector.chureai.com/
 
 ## How It Works
 
