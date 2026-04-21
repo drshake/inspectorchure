@@ -1,18 +1,17 @@
 # InspectorChure
 
-AI-powered food safety inspection using computer vision to analyze kitchen hygiene compliance.
+Always on food safety inspection using computer vision to analyze kitchen hygiene compliance.
 
 ## Features
 
 - 📹 Browser-based video recording
-- 🔍 Computer vision detection (Google Cloud Vision API)
-- 📊 Weighted hygiene scoring across 6 categories
+- 🔍 Computer vision detection (HF token API,HUGGINGFACE_MODEL=Qwen/Qwen2.5-VL-7B-Instruct)
+- 📊 Weighted hygiene scoring across 8 categories
 - ⚡ Parallel processing for fast analysis
 - 💡 Contextual feedback for detected issues
-- 🏆 Churred Safety Badge for scores 80% and above
 - 👤 User authentication and vendor profiles
 - 💾 Database persistence with Supabase
-- 📤 Share and download reports
+- 📤 Download reports
 
 ## Setup
 
@@ -23,10 +22,9 @@ npm install
 
 ### 2. Configure Google Cloud Vision API
 
-1. Enable Vision API: https://console.cloud.google.com/apis/library/vision.googleapis.com
-2. Enable billing (first 1,000 requests/month are free)
-3. Create API Key: https://console.cloud.google.com/apis/credentials
-4. Restrict key to Cloud Vision API only
+1. Enable HUGGINGFACE API: HUGGINGFACE_API_TOKEN=
+2. Create API Key: https://huggingface.co/Qwen/Qwen2.5-VL-7B-Instruct
+3. Restrict key to API only
 
 ### 3. Configure Supabase
 
@@ -39,8 +37,10 @@ npm install
 
 Create `.env.local`:
 \`\`\`bash
-# Google Cloud Vision API
-GOOGLE_CLOUD_VISION_API_KEY=your-api-key-here
+# HUGGINGFACE API
+Hugging Face (Qwen3-VL)
+HUGGINGFACE_API_TOKEN
+# HUGGINGFACE_MODEL=Qwen/Qwen2.5-VL-7B-Instruct  # 
 
 # Supabase
 NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
@@ -56,8 +56,8 @@ Visit http://localhost:3000
 
 ## How It Works
 
-1. **Record** - Capture video via webcam
-2. **Extract** - Convert to frames (1 FPS, JPEG 0.95 quality)
+1. **Record** - Capture video via camera
+2. **Extract** - Convert to frames 
 3. **Analyze** - Parallel CV detection (5 concurrent requests)
 4. **Score** - Weighted algorithm calculates compliance
 5. **Save** - Persist results to Supabase database
@@ -66,17 +66,21 @@ Visit http://localhost:3000
 
 ## Hygiene Categories
 
-- Protective Gloves (30%)
-- Bare Hands Detection (25%)
-- Hair Net Compliance (15%)
-- Clean Surfaces (15%)
-- Equipment Usage (10%)
-- Cross Contamination (5%)
+- POSITIVES (things that earn points):
+- protectiveGloves: 12%
+- cleanSurface: 12%
+- hairNet: 10%
+- properApron: 10%
+- handwashStation: 16%
+
+VIOLATIONS (things that lose points):
+- bareHands: 20%
+- pestSigns: 15%
+- crossContamination: 5%
 
 ## Churred Safety Badge
 
 Vendors who score **80% or above** earn the Churred Safety Badge:
-- ✅ Badge valid for 90 days
 - ✅ Public badge display for vendor websites
 - ✅ Track badge history and expiration
 - ✅ Re-test before expiration to maintain badge
@@ -86,13 +90,13 @@ Vendors who score **80% or above** earn the Churred Safety Badge:
 - Next.js 14, React 18, TypeScript
 - TailwindCSS
 - Supabase (Database + Authentication)
-- Google Cloud Vision API
+- Qwen2.5-VL-7B-Instruct(Model)
 
 ## Tips for Best Results
 
 - Use bright, well-lit environment
 - Keep camera stable and focused
-- Record 30-60 seconds of food preparation
+- Record 60-90 seconds of food preparation
 - Include hands, surfaces, and equipment in frame
 
 ## License
