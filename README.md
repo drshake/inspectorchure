@@ -4,14 +4,14 @@ Always on food safety inspection using computer vision to analyze kitchen hygien
 
 ## Features
 
-- 📹 Browser-based video recording
-- 🔍 Computer vision detection (HF token API,HUGGINGFACE_MODEL=Qwen/Qwen2.5-VL-7B-Instruct)
-- 📊 Weighted hygiene scoring across 8 categories
-- ⚡ Parallel processing for fast analysis
-- 💡 Contextual feedback for detected issues
-- 👤 User authentication and vendor profiles
-- 💾 Database persistence with Supabase
-- 📤 Download reports
+- Browser-based video recording
+- Computer vision detection (HF token API,HUGGINGFACE_MODEL=Qwen/Qwen2.5-VL-7B-Instruct)
+- Weighted hygiene scoring across 8 categories
+- Parallel processing for fast analysis
+- Contextual feedback for detected issues
+- User authentication and vendor profiles
+- Database persistence with Supabase
+  
 
 ## Setup
 
@@ -20,7 +20,7 @@ Always on food safety inspection using computer vision to analyze kitchen hygien
 npm install
 \`\`\`
 
-### 2. Configure Google Cloud Vision API
+### 2. Configure HUGGINGFACE QWEN VL API
 
 1. Enable HUGGINGFACE API: HUGGINGFACE_API_TOKEN=
 2. Create API Key: https://huggingface.co/Qwen/Qwen2.5-VL-7B-Instruct
@@ -56,34 +56,27 @@ Visit https://inspector.chureai.com/
 
 ## How It Works
 
-1. **Record** - Capture video via camera
+1. **Record** - Capture video via camera and sensor
 2. **Extract** - Convert to frames 
 3. **Analyze** - Parallel CV detection (5 concurrent requests)
 4. **Score** - Weighted algorithm calculates compliance
 5. **Save** - Persist results to Supabase database
-6. **Badge** - Award Churred Safety Badge for 80%+ scores
-7. **Display** - Contextual feedback with scores and suggestions
+6. **Display** - Contextual feedback with scores and suggestions
 
 ## Hygiene Categories
 
 - POSITIVES (things that earn points):
-- protectiveGloves: 12%
-- cleanSurface: 12%
-- hairNet: 10%
-- properApron: 10%
-- handwashStation: 16%
+- protectiveGloves
+- cleanSurface
+- hairNet
+- properApron
+- handwashStation
 
 VIOLATIONS (things that lose points):
-- bareHands: 20%
-- pestSigns: 15%
-- crossContamination: 5%
+- bareHands
+- pestSigns
+- crossContamination
 
-## Churred Safety Badge
-
-Vendors who score **80% or above** earn the Churred Safety Badge:
-- ✅ Public badge display for vendor websites
-- ✅ Track badge history and expiration
-- ✅ Re-test before expiration to maintain badge
 
 ## Tech Stack
 
