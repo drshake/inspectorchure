@@ -23,7 +23,7 @@ npm install
 ### 2. Configure HUGGINGFACE QWEN VL API
 
 1. Enable HUGGINGFACE API: HUGGINGFACE_API_TOKEN=
-2. Create API Key: https://huggingface.co/Qwen/Qwen2.5-VL-7B-Instruct
+2. Create API Key
 3. Restrict key to API only
 
 ### 3. Configure Supabase
@@ -42,12 +42,7 @@ Hugging Face (Qwen3-VL)
 HUGGINGFACE_API_TOKEN
 # HUGGINGFACE_MODEL=Qwen/Qwen2.5-VL-7B-Instruct  # 
 
-# Supabase
-NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
-\`\`\`
-
-### 4. Run
+4. Run
 \`\`\`bash
 npm run dev
 \`\`\`
