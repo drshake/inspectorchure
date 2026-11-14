@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const apiToken = process.env.HUGGINGFACE_API_TOKEN
+    const apiToken = process.env.OPENROUTER_API_KEY
     if (!apiToken) {
       console.error('HUGGINGFACE_API_TOKEN not configured')
       return NextResponse.json(
@@ -106,57 +106,56 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const model = process.env.HUGGINGFACE_MODEL || 'Qwen/Qwen2.5-VL-7B-Instruct'
-
+  const model = 'openrouter/free'
     // Ensure base64 image has proper data URI for the API
     const base64Data = image.replace(/^data:image\/\w+;base64,/, '')
     const imageUrl = `data:image/jpeg;base64,${base64Data}`
 
     console.log(`[VLM] Analyzing frame ${frameNumber} with ${model}`)
 
-    let response: Response
-    try {
-      response = await fetch(
-        `https://router.huggingface.co/v1/chat/completions`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${apiToken}`,
-            'Content-Type': 'application/json',
+   let response: Response
+try {
+  response = await fetch(
+    'https://openrouter.ai/api/v1/chat/completions',
+    {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model,
+        messages: [
+          {
+            role: 'system',
+            content: SYSTEM_PROMPT,
           },
-          body: JSON.stringify({
-            model,
-            messages: [
+          {
+            role: 'user',
+            content: [
               {
-                role: 'system',
-                content: SYSTEM_PROMPT,
+                type: 'image_url',
+                image_url: { url: imageUrl },
               },
               {
-                role: 'user',
-                content: [
-                  {
-                    type: 'image_url',
-                    image_url: { url: imageUrl },
-                  },
-                  {
-                    type: 'text',
-                    text: 'Analyze this kitchen image for food safety compliance. Return JSON only.',
-                  },
-                ],
+                type: 'text',
+                text: 'Analyze this kitchen image for hygiene issues according to the system prompt. Return only valid JSON.',
               },
             ],
-            temperature: 0.1,
-            max_tokens: 1024,
-          }),
-        }
-      )
-    } catch (fetchError) {
-      console.error('[VLM] HF API fetch failed:', fetchError)
-      return NextResponse.json(
-        { error: 'Failed to reach VLM API', message: fetchError instanceof Error ? fetchError.message : 'Network error' },
-        { status: 502 }
-      )
+          },
+        ],
+        temperature: 0.1,
+        max_tokens: 1024,
+      }),
     }
+  )
+} catch (fetchError) {
+  console.error('[VLM] API fetch failed:', fetchError)
+  return NextResponse.json(
+    { error: 'Failed to reach VLM API', message: String(fetchError) },
+    { status: 502 }
+  )
+}
 
     // Handle rate limiting
     if (response.status === 429) {
