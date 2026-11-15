@@ -22,7 +22,7 @@ npm install
 
 ### 2. Configure HUGGINGFACE QWEN VL API
 
-1. Enable HUGGINGFACE API: HUGGINGFACE_API_TOKEN=
+1. Enable OPEN ROUTER API
 2. Create API Key
 3. Restrict key to API only
 
